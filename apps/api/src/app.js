@@ -23,9 +23,17 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet());
+const allowedOrigins = [...new Set([
+  'https://yac.voidgrid.com',
+  'https://www.yac.voidgrid.com',
+  CLIENT_URL,
+].filter(Boolean))];
 const corsOrigin = process.env.NODE_ENV === 'development'
   ? true
-  : CLIENT_URL;
+  : (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin)) cb(null, true);
+      else cb(null, false);
+    };
 app.use(cors({
   origin: corsOrigin,
   credentials: true,
