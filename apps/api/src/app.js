@@ -20,6 +20,8 @@ const adminRoutes = require('./modules/admin/routes');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(helmet());
 const corsOrigin = process.env.NODE_ENV === 'development'
   ? true
