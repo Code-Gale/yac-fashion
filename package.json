@@ -1,0 +1,16 @@
+{
+  "name": "yac-fashion-house",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @yac/api",
+    "dev:web": "npm run dev -w @yac/web",
+    "build": "npm run build -w @yac/web",
+    "start:api": "npm run start -w @yac/api",
+    "seed": "npm run seed -w @yac/api"
+  }
+}

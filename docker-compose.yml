@@ -1,0 +1,68 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    ports:
+      - "5401:4000"
+    volumes:
+      - ./apps/api/src:/app/src
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - MONGO_URI=mongodb://mongodb:27017/yac-fashion
+      - REDIS_URL=redis://redis:6379
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+    depends_on:
+      - mongodb
+      - redis
+      - minio
+    networks:
+      - yac-network
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27401:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - yac-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "16379:6379"
+    networks:
+      - yac-network
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - yac-network
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  yac-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  minio_data:
