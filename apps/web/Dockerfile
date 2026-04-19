@@ -6,6 +6,13 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Inlined into client bundles at build time — must match production URLs
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+
 RUN mkdir -p public
 RUN npm run build
 
