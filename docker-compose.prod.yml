@@ -32,6 +32,8 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      # Override repo .env PORT (e.g. 4100 for local); nginx + publish expect 3000
+      - PORT=3000
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
     depends_on:
