@@ -22,23 +22,40 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-app.use(helmet());
-const allowedOrigins = [...new Set([
-  'https://yac.voidgrid.com',
-  'https://www.yac.voidgrid.com',
-  CLIENT_URL,
-].filter(Boolean))];
-const corsOrigin = process.env.NODE_ENV === 'development'
-  ? true
-  : (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin)) cb(null, true);
-      else cb(null, false);
-    };
-app.use(cors({
-  origin: corsOrigin,
+const normalizeOrigin = (value) => {
+  if (!value || typeof value !== 'string') return '';
+  return value.trim().replace(/\/+$/, '');
+};
+
+const extraOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
+const allowedOrigins = new Set(
+  [normalizeOrigin(CLIENT_URL), ...extraOrigins].filter(Boolean)
+);
+
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === 'development'
+      ? true
+      : (origin, cb) => {
+          if (!origin) return cb(null, true);
+          if (allowedOrigins.has(normalizeOrigin(origin))) return cb(null, true);
+          return cb(null, false);
+        },
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
-}));
+};
+
+app.use(cors(corsOptions));
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 app.use(morgan('dev'));
 
 app.post(
