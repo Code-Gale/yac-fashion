@@ -1,6 +1,13 @@
 const Product = require('./model');
 const Category = require('../categories/model');
 const { deleteFromMinio } = require('../../utils/upload');
+const { getCached, invalidateCacheKeys, CACHE_KEYS } = require('../../utils/cache');
+
+const LIST_PROJECTION =
+  'name slug price compareAtPrice flashSalePrice flashSaleEndsAt images category stock isActive isFeatured ratings';
+
+const invalidateProductPublicCaches = () =>
+  invalidateCacheKeys([CACHE_KEYS.productsFeatured, CACHE_KEYS.productsFlashSale]);
 
 const getSort = (sortParam) => {
   switch (sortParam) {
@@ -27,7 +34,13 @@ const findAll = async (params) => {
   if (params.minRating != null) query['ratings.average'] = { $gte: Number(params.minRating) };
   if (params.inStock === 'true' || params.inStock === true) query.stock = { $gt: 0 };
   const [products, total] = await Promise.all([
-    Product.find(query).populate('category').sort(sort).skip(skip).limit(limit),
+    Product.find(query)
+      .select(LIST_PROJECTION)
+      .populate('category', 'name slug')
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     Product.countDocuments(query),
   ]);
   return { products, total, page, totalPages: Math.ceil(total / limit) };
@@ -38,7 +51,14 @@ const findBySlug = async (slug) => {
 };
 
 const findFeatured = async () => {
-  return Product.find({ isFeatured: true, isActive: true }).populate('category').limit(8);
+  return getCached(CACHE_KEYS.productsFeatured, async () => {
+    const products = await Product.find({ isFeatured: true, isActive: true })
+      .select(LIST_PROJECTION)
+      .populate('category', 'name slug')
+      .limit(8)
+      .lean();
+    return products;
+  });
 };
 
 const search = async (q) => {
@@ -48,11 +68,17 @@ const search = async (q) => {
   return Product.find({
     $text: { $search: q.trim() },
     isActive: true,
-  }).populate('category').limit(50);
+  })
+    .select(LIST_PROJECTION)
+    .populate('category', 'name slug')
+    .limit(50)
+    .lean();
 };
 
 const create = async (data) => {
-  return Product.create(data);
+  const created = await Product.create(data);
+  await invalidateProductPublicCaches();
+  return created;
 };
 
 const update = async (id, data) => {
@@ -63,7 +89,9 @@ const update = async (id, data) => {
       await Promise.all(toRemove.map((url) => deleteFromMinio(url)));
     }
   }
-  return Product.findByIdAndUpdate(id, data, { new: true }).populate('category');
+  const updated = await Product.findByIdAndUpdate(id, data, { new: true }).populate('category');
+  await invalidateProductPublicCaches();
+  return updated;
 };
 
 const softDelete = async (id) => {
@@ -71,11 +99,19 @@ const softDelete = async (id) => {
   if (product && product.images && product.images.length > 0) {
     await Promise.all(product.images.map((url) => deleteFromMinio(url)));
   }
-  return Product.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const result = await Product.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  await invalidateProductPublicCaches();
+  return result;
 };
 
 const updateStock = async (id, stock) => {
-  return Product.findByIdAndUpdate(id, { stock: Math.max(0, Number(stock)) }, { new: true });
+  const updated = await Product.findByIdAndUpdate(
+    id,
+    { stock: Math.max(0, Number(stock)) },
+    { new: true }
+  );
+  await invalidateProductPublicCaches();
+  return updated;
 };
 
 const findById = async (id) => {
@@ -111,32 +147,45 @@ const findRelated = async (slug) => {
     category: product.category,
     isActive: true,
   })
+    .select(LIST_PROJECTION)
+    .populate('category', 'name slug')
     .sort({ 'ratings.count': -1 })
     .limit(6)
-    .populate('category');
+    .lean();
 };
 
 const findFlashSale = async () => {
   const now = new Date();
-  return Product.find({
-    isActive: true,
-    flashSalePrice: { $exists: true, $ne: null },
-    flashSaleEndsAt: { $gt: now },
-  }).populate('category');
+  return getCached(CACHE_KEYS.productsFlashSale, async () => {
+    const products = await Product.find({
+      isActive: true,
+      flashSalePrice: { $exists: true, $ne: null },
+      flashSaleEndsAt: { $gt: now },
+    })
+      .select(LIST_PROJECTION)
+      .populate('category', 'name slug')
+      .limit(12)
+      .lean();
+    return products;
+  });
 };
 
 const updateFlashSale = async (id, data) => {
+  let updated;
   if (data === null || (data.flashSalePrice == null && data.flashSaleEndsAt == null)) {
-    return Product.findByIdAndUpdate(
+    updated = await Product.findByIdAndUpdate(
       id,
       { $unset: { flashSalePrice: '', flashSaleEndsAt: '' } },
       { new: true }
     ).populate('category');
+  } else {
+    const update = {};
+    if (data.flashSalePrice != null) update.flashSalePrice = data.flashSalePrice;
+    if (data.flashSaleEndsAt != null) update.flashSaleEndsAt = data.flashSaleEndsAt;
+    updated = await Product.findByIdAndUpdate(id, update, { new: true }).populate('category');
   }
-  const update = {};
-  if (data.flashSalePrice != null) update.flashSalePrice = data.flashSalePrice;
-  if (data.flashSaleEndsAt != null) update.flashSaleEndsAt = data.flashSaleEndsAt;
-  return Product.findByIdAndUpdate(id, update, { new: true }).populate('category');
+  await invalidateProductPublicCaches();
+  return updated;
 };
 
 module.exports = {

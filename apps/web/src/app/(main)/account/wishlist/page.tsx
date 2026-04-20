@@ -1,13 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/components/ui/ToastContext';
 import { ProductCard } from '@/components/shared/ProductCard';
 
 export default function WishlistPage() {
-  const { wishlist, removeWithUndo } = useWishlist();
+  const { wishlist, removeWithUndo, fetchWishlist } = useWishlist();
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchWishlist();
+  }, [fetchWishlist]);
 
   const handleWishlistRemove = async (productId: string) => {
     const result = await removeWithUndo(productId);

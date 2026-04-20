@@ -19,7 +19,7 @@ type CartItem = {
 };
 
 export function CartDrawer() {
-  const { items, subtotal, itemCount, coupon, discount, closeCart, isOpen, removeItem, updateQuantity, applyCoupon, removeCoupon } = useCart();
+  const { items, subtotal, itemCount, coupon, discount, closeCart, isOpen, removeItem, updateQuantity, applyCoupon, removeCoupon, fetchCart } = useCart();
   const [couponExpanded, setCouponExpanded] = useState(false);
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
@@ -30,6 +30,10 @@ export function CartDrawer() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isOpen) fetchCart();
+  }, [isOpen, fetchCart]);
 
   const total = Math.max(0, subtotal - discount);
 

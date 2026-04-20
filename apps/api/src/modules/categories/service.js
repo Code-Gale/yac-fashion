@@ -1,8 +1,11 @@
 const Category = require('./model');
 const Product = require('../products/model');
+const { getCached, invalidateCacheKeys, CACHE_KEYS } = require('../../utils/cache');
 
 const findAllActive = async () => {
-  return Category.find({ isActive: true }).sort({ name: 1 });
+  return getCached(CACHE_KEYS.categories, async () => {
+    return Category.find({ isActive: true }).sort({ name: 1 }).lean();
+  });
 };
 
 const findBySlug = async (slug) => {
@@ -17,15 +20,21 @@ const getCategoryWithProductCount = async (slug) => {
 };
 
 const create = async (data) => {
-  return Category.create(data);
+  const doc = await Category.create(data);
+  await invalidateCacheKeys([CACHE_KEYS.categories]);
+  return doc;
 };
 
 const update = async (id, data) => {
-  return Category.findByIdAndUpdate(id, data, { new: true });
+  const doc = await Category.findByIdAndUpdate(id, data, { new: true });
+  await invalidateCacheKeys([CACHE_KEYS.categories]);
+  return doc;
 };
 
 const softDelete = async (id) => {
-  return Category.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const doc = await Category.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  await invalidateCacheKeys([CACHE_KEYS.categories]);
+  return doc;
 };
 
 const findAllForAdmin = async () => {

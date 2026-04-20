@@ -6,6 +6,7 @@ const inventoryService = require('./inventoryService');
 const reportService = require('./reportService');
 const bannerAdminService = require('./bannerAdminService');
 const abandonedCartService = require('./abandonedCartService');
+const { invalidateCacheKeys, CACHE_KEYS } = require('../../utils/cache');
 const { success, error } = require('../../utils/response');
 const { asyncHandler } = require('../../utils/asyncHandler');
 
@@ -106,6 +107,7 @@ const getInventory = asyncHandler(async (req, res) => {
 const updateInventoryStock = asyncHandler(async (req, res) => {
   const product = await inventoryService.updateStock(req.params.productId, req.body.stock);
   if (!product) return error(res, 'Product not found', 404);
+  await invalidateCacheKeys([CACHE_KEYS.productsFeatured, CACHE_KEYS.productsFlashSale]);
   success(res, product);
 });
 

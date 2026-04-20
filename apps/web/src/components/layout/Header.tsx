@@ -35,9 +35,22 @@ export function Header() {
   const itemCount = useCartStore((s) => s.itemCount);
   const { openCart } = useCartStore();
   const wishlistCount = useWishlistStore((s) => s.count);
-  const { isInWishlist } = useWishlist();
+  const { isInWishlist, fetchWishlist } = useWishlist();
+  const wishlistPrimedRef = useRef(false);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      wishlistPrimedRef.current = false;
+      return;
+    }
+    if (wishlistPrimedRef.current) return;
+    if (userMenuOpen || drawerOpen) {
+      wishlistPrimedRef.current = true;
+      fetchWishlist();
+    }
+  }, [isAuthenticated, userMenuOpen, drawerOpen, fetchWishlist]);
 
   useEffect(() => {
     if (!debouncedSearch.trim()) {

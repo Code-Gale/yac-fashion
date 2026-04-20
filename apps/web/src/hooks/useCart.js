@@ -1,14 +1,12 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
-import { useAuthStore } from '@/store/auth';
+import { useCallback } from 'react';
 import { useCartStore } from '@/store/cart';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/ToastContext';
 
 export function useCart() {
   const { items, subtotal, itemCount, coupon, discount, setCart, clearCart, openCart, closeCart, toggleCart } = useCartStore();
-  const { accessToken } = useAuthStore();
   const { toast } = useToast();
 
   const fetchCart = useCallback(async () => {
@@ -20,10 +18,6 @@ export function useCart() {
       setCart({ items: [], subtotal: 0, itemCount: 0, couponCode: null, discount: 0 });
     }
   }, [setCart]);
-
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart, accessToken]);
 
   const addItem = useCallback(
     async (productId, quantity = 1) => {

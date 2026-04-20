@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { useWishlistStore } from '@/store/wishlist';
 import { api } from '@/lib/api';
@@ -22,10 +22,6 @@ export function useWishlist() {
       setWishlist([]);
     }
   }, [accessToken, setWishlist]);
-
-  useEffect(() => {
-    fetchWishlist();
-  }, [fetchWishlist]);
 
   const toggle = useCallback(
     async (productId) => {

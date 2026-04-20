@@ -30,6 +30,10 @@ const productSchema = new mongoose.Schema({
 
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1, isFeatured: 1, isActive: 1, price: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, flashSalePrice: 1, flashSaleEndsAt: 1 });
+productSchema.index({ isActive: 1, isFeatured: 1 });
+productSchema.index({ isActive: 1, createdAt: -1 });
+productSchema.index({ isActive: 1, category: 1, createdAt: -1 });
 
 productSchema.pre('save', function (next) {
   if (!this.slug && this.name) {
