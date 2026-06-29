@@ -26,13 +26,13 @@ const create = async (data) => {
 };
 
 const update = async (id, data) => {
-  const doc = await Category.findByIdAndUpdate(id, data, { new: true });
+  const doc = await Category.findByIdAndUpdate(id, data, { new: true, runValidators: true });
   await invalidateCacheKeys([CACHE_KEYS.categories]);
   return doc;
 };
 
 const softDelete = async (id) => {
-  const doc = await Category.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const doc = await Category.findByIdAndUpdate(id, { isActive: false }, { new: true, runValidators: true });
   await invalidateCacheKeys([CACHE_KEYS.categories]);
   return doc;
 };

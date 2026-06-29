@@ -50,4 +50,12 @@ const orderSchema = new mongoose.Schema({
   notes: { type: String, default: null },
 }, { timestamps: true });
 
+// Performance indexes for common query patterns
+orderSchema.index({ userId: 1, createdAt: -1 }); // User order history
+orderSchema.index({ paymentStatus: 1, createdAt: -1 }); // Admin payment queries
+orderSchema.index({ status: 1 }); // Order status filtering
+orderSchema.index({ guestEmail: 1 }); // Guest order tracking
+orderSchema.index({ couponCode: 1 }); // Coupon usage analytics
+orderSchema.index({ createdAt: -1 }); // Recent orders (admin dashboard)
+
 module.exports = mongoose.model('Order', orderSchema);

@@ -2,8 +2,9 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
-const { CLIENT_URL } = require('./config/env');
-const { authRateLimiter } = require('./middleware/rateLimiter');
+const cookieParser = require('cookie-parser');
+const { CLIENT_URL, NODE_ENV } = require('./config/env');
+const { authRateLimiter, globalRateLimiter } = require('./middleware/rateLimiter');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const authRoutes = require('./modules/auth/routes');
@@ -56,7 +57,13 @@ app.use(
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
-app.use(morgan('dev'));
+
+// Use 'combined' format in production for Apache-style logs, 'dev' for development
+if (NODE_ENV === 'production') {
+  app.use(morgan('combined'));
+} else {
+  app.use(morgan('dev'));
+}
 
 app.post(
   '/api/payments/paystack/webhook',
@@ -70,6 +77,10 @@ app.post(
 );
 
 app.use(express.json());
+app.use(cookieParser()); // Parse cookies for auth token management
+
+// Global rate limiter for all API routes (excluding webhooks which are above)
+app.use('/api', globalRateLimiter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -3,6 +3,7 @@ const Product = require('../products/model');
 const couponService = require('../coupons/service');
 const cartService = require('../cart/service');
 const paymentService = require('../payments/service');
+const { validateShippingOption } = require('../../config/shipping');
 const { sendEmail } = require('../../utils/email');
 const { orderConfirmation } = require('../../utils/emailTemplates');
 const { PAYSTACK_PUBLIC_KEY, FLUTTERWAVE_PUBLIC_KEY, CLIENT_URL } = require('../../config/env');
@@ -31,21 +32,41 @@ const checkout = async (data, userId, cartKey) => {
     err.statusCode = 400;
     throw err;
   }
-  if (!shippingOption || typeof shippingOption.label !== 'string' || typeof shippingOption.price !== 'number') {
-    const err = new Error('Invalid shipping option');
+  if (!shippingOption || !shippingOption.id) {
+    const err = new Error('Shipping option required');
     err.statusCode = 400;
     throw err;
   }
+  
+  // Validate shipping option against server-side configuration
+  const shippingValidation = validateShippingOption(shippingOption);
+  if (!shippingValidation.valid) {
+    const err = new Error(shippingValidation.error || 'Invalid shipping option');
+    err.statusCode = 400;
+    throw err;
+  }
+  
+  // Use server-validated shipping option (ignore client-provided price)
+  const validatedShipping = shippingValidation.option;
   const validMethods = ['paystack', 'flutterwave', 'bank_transfer', 'cash_on_delivery'];
   if (!validMethods.includes(paymentMethod)) {
     const err = new Error('Invalid payment method');
     err.statusCode = 400;
     throw err;
   }
+  
+  // Batch load all products at once to avoid N+1 queries
+  const productIds = items.map(entry => entry.productId);
+  const products = await Product.find({ _id: { $in: productIds }, isActive: true });
+  const productMap = new Map(products.map(p => [p._id.toString(), p]));
+  
+  // Validate products and build order items with flash sale pricing
   const orderItems = [];
   let subtotal = 0;
+  const now = new Date();
+  
   for (const entry of items) {
-    const product = await Product.findOne({ _id: entry.productId, isActive: true });
+    const product = productMap.get(entry.productId.toString());
     if (!product) {
       const err = new Error(`Product ${entry.productId} not found or inactive`);
       err.statusCode = 400;
@@ -57,18 +78,27 @@ const checkout = async (data, userId, cartKey) => {
       err.statusCode = 400;
       throw err;
     }
-    const itemSubtotal = product.price * qty;
+    
+    // Apply flash sale price if active
+    let itemPrice = product.price;
+    if (product.flashSalePrice != null && product.flashSaleEndsAt && product.flashSaleEndsAt > now) {
+      itemPrice = product.flashSalePrice;
+    }
+    
+    const itemSubtotal = itemPrice * qty;
     subtotal += itemSubtotal;
     orderItems.push({
       productId: product._id,
       name: product.name,
       slug: product.slug,
       image: product.images?.[0] || null,
-      price: product.price,
+      price: itemPrice,
       quantity: qty,
       subtotal: itemSubtotal,
     });
   }
+  
+  // Validate and apply coupon with atomic usage increment
   let discount = 0;
   let appliedCouponCode = null;
   if (couponCode && couponCode.trim()) {
@@ -76,9 +106,33 @@ const checkout = async (data, userId, cartKey) => {
     if (couponResult.valid) {
       discount = couponResult.discountAmount;
       appliedCouponCode = couponResult.coupon.code;
+      
+      // Atomically increment coupon usage if it has a limit
+      if (couponResult.coupon.usageLimit != null) {
+        const updated = await require('../coupons/model').findOneAndUpdate(
+          { 
+            code: appliedCouponCode,
+            $expr: { $lt: ['$usedCount', '$usageLimit'] }
+          },
+          { $inc: { usedCount: 1 } },
+          { new: true }
+        );
+        if (!updated) {
+          const err = new Error('Coupon usage limit exceeded');
+          err.statusCode = 400;
+          throw err;
+        }
+      } else {
+        // No limit, just increment
+        await require('../coupons/model').findOneAndUpdate(
+          { code: appliedCouponCode },
+          { $inc: { usedCount: 1 } }
+        );
+      }
     }
   }
-  const shippingFee = shippingOption.price;
+  
+  const shippingFee = validatedShipping.price;
   const total = Math.max(0, subtotal - discount + shippingFee);
   let orderNumber = generateOrderNumber();
   let exists = await Order.findOne({ orderNumber });
@@ -86,6 +140,41 @@ const checkout = async (data, userId, cartKey) => {
     orderNumber = generateOrderNumber();
     exists = await Order.findOne({ orderNumber });
   }
+  
+  // Atomically decrement stock for ALL payment methods with conditional check
+  const stockUpdates = [];
+  for (const item of orderItems) {
+    const result = await Product.findOneAndUpdate(
+      { 
+        _id: item.productId,
+        stock: { $gte: item.quantity },
+        isActive: true
+      },
+      { $inc: { stock: -item.quantity } },
+      { new: true }
+    );
+    if (!result) {
+      // Rollback previously decremented stock
+      for (const rollbackItem of stockUpdates) {
+        await Product.findByIdAndUpdate(
+          rollbackItem.productId,
+          { $inc: { stock: rollbackItem.quantity } }
+        );
+      }
+      // Rollback coupon if it was incremented
+      if (appliedCouponCode) {
+        await require('../coupons/model').findOneAndUpdate(
+          { code: appliedCouponCode },
+          { $inc: { usedCount: -1 } }
+        );
+      }
+      const err = new Error(`Insufficient stock for ${item.name} (concurrent checkout)`);
+      err.statusCode = 409;
+      throw err;
+    }
+    stockUpdates.push(item);
+  }
+  
   const isCod = paymentMethod === 'cash_on_delivery';
   const order = await Order.create({
     orderNumber,
@@ -100,8 +189,9 @@ const checkout = async (data, userId, cartKey) => {
       phone: shippingAddress.phone,
     },
     shippingOption: {
-      label: shippingOption.label,
-      price: shippingOption.price,
+      id: validatedShipping.id,
+      label: validatedShipping.label,
+      price: validatedShipping.price,
     },
     subtotal,
     discount,
@@ -109,20 +199,10 @@ const checkout = async (data, userId, cartKey) => {
     total,
     couponCode: appliedCouponCode,
     paymentMethod,
-    paymentStatus: 'pending',
+    paymentStatus: isCod ? 'pending' : 'pending',
     status: isCod ? 'confirmed' : 'pending',
   });
-  if (isCod) {
-    const bulkOps = orderItems.map((item) => ({
-      updateOne: {
-        filter: { _id: item.productId },
-        update: { $inc: { stock: -item.quantity } },
-      },
-    }));
-    if (bulkOps.length > 0) {
-      await Product.bulkWrite(bulkOps);
-    }
-  }
+  
   if (cartKey) {
     await cartService.clearCart(cartKey);
   }
@@ -217,7 +297,7 @@ const track = async (orderNumber, email) => {
 };
 
 const updateStatus = async (id, status) => {
-  return Order.findByIdAndUpdate(id, { status }, { new: true });
+  return Order.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
 };
 
 module.exports = {

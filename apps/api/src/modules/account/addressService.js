@@ -66,7 +66,7 @@ const setDefaultAddress = async (userId, addressId) => {
   user.addresses.forEach((_, i) => {
     updates[`addresses.${i}.isDefault`] = i === idx;
   });
-  await User.findByIdAndUpdate(userId, { $set: updates });
+  await User.findByIdAndUpdate(userId, { $set: updates }, { runValidators: true });
   const updated = await User.findById(userId).select('addresses');
   return updated?.addresses?.[idx] || null;
 };

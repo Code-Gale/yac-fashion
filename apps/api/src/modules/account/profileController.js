@@ -1,4 +1,5 @@
 const userService = require('../users/service');
+const authService = require('../auth/service');
 const { success, error } = require('../../utils/response');
 const { asyncHandler } = require('../../utils/asyncHandler');
 const bcrypt = require('bcryptjs');
@@ -28,7 +29,11 @@ const changePassword = asyncHandler(async (req, res) => {
   if (!valid) return error(res, 'Current password is incorrect', 400);
   const passwordHash = await bcrypt.hash(newPassword, 12);
   await userService.updatePassword(req.user.userId, passwordHash);
-  success(res, { message: 'Password updated' });
+  
+  // Revoke all existing sessions by deleting the refresh token
+  await authService.logout(req.user.userId);
+  
+  success(res, { message: 'Password updated. Please log in again with your new password.' });
 });
 
 module.exports = {

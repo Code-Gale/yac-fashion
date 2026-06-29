@@ -10,7 +10,7 @@ const createCoupon = async (data) => {
 };
 
 const updateCoupon = async (id, data) => {
-  return Coupon.findByIdAndUpdate(id, data, { new: true });
+  return Coupon.findByIdAndUpdate(id, data, { new: true, runValidators: true });
 };
 
 const deleteCoupon = async (id) => {

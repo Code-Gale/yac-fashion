@@ -1,4 +1,5 @@
 const productService = require('./service');
+const { sanitizeProductData } = require('../../utils/sanitize');
 const { success, error } = require('../../utils/response');
 const { asyncHandler } = require('../../utils/asyncHandler');
 
@@ -37,12 +38,14 @@ const getFlashSale = asyncHandler(async (req, res) => {
 });
 
 const create = asyncHandler(async (req, res) => {
-  const product = await productService.create(req.body);
+  const sanitizedData = sanitizeProductData(req.body);
+  const product = await productService.create(sanitizedData);
   success(res, product, 201);
 });
 
 const update = asyncHandler(async (req, res) => {
-  const product = await productService.update(req.params.id, req.body);
+  const sanitizedData = sanitizeProductData(req.body);
+  const product = await productService.update(req.params.id, sanitizedData);
   if (!product) {
     return error(res, 'Product not found', 404);
   }

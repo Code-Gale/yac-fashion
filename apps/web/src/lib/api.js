@@ -5,7 +5,7 @@ const baseURL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'}/a
 
 export const api = axios.create({
   baseURL,
-  withCredentials: false,
+  withCredentials: true, // Enable cookies for HttpOnly auth tokens
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -17,6 +17,7 @@ export function setAuthStoreForApi(store) {
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
+    // Send Authorization header as fallback (cookies are primary now)
     if (authStore?.getState?.()) {
       const token = authStore.getState().accessToken;
       if (token) {
@@ -38,23 +39,24 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !original._retry && authStore?.getState?.()) {
       original._retry = true;
       const refreshToken = authStore.getState().refreshToken;
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post(`${baseURL}/auth/refresh`, {
-            refreshToken,
-          });
-          const payload = data?.data ?? data;
-          authStore.getState().updateTokens?.(payload.accessToken, payload.refreshToken);
+      
+      try {
+        // Refresh endpoint will use cookie if available, or body refreshToken as fallback
+        const { data } = await axios.post(`${baseURL}/auth/refresh`, 
+          refreshToken ? { refreshToken } : {},
+          { withCredentials: true } // Important: send cookies
+        );
+        const payload = data?.data ?? data;
+        
+        // Update tokens in store (cookies are managed by server)
+        authStore.getState().updateTokens?.(payload.accessToken, payload.refreshToken);
+        
+        // Retry original request (cookies will be sent automatically)
+        if (payload.accessToken) {
           original.headers.Authorization = `Bearer ${payload.accessToken}`;
-          return api(original);
-        } catch (refreshErr) {
-          authStore.getState().clearAuth?.();
-          if (typeof window !== 'undefined') {
-            const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
-            window.location.href = `/login?returnUrl=${returnUrl}`;
-          }
         }
-      } else {
+        return api(original);
+      } catch (refreshErr) {
         authStore.getState().clearAuth?.();
         if (typeof window !== 'undefined') {
           const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);

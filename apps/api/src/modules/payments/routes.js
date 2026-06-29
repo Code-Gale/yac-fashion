@@ -1,6 +1,8 @@
 const express = require('express');
 const paymentController = require('./controller');
 const { auth } = require('../../middleware/auth');
+const { optionalAuth } = require('../../middleware/optionalAuth');
+const { paymentRateLimiter } = require('../../middleware/rateLimiter');
 const { validate } = require('../../middleware/validate');
 const { body } = require('express-validator');
 
@@ -8,14 +10,18 @@ const router = express.Router();
 
 router.post(
   '/paystack/initialize',
-  [body('orderId').notEmpty()],
+  paymentRateLimiter,
+  optionalAuth,
+  [body('orderId').notEmpty(), body('guestEmail').optional().isEmail()],
   validate,
   paymentController.initiatePaystack
 );
 
 router.post(
   '/flutterwave/initialize',
-  [body('orderId').notEmpty()],
+  paymentRateLimiter,
+  optionalAuth,
+  [body('orderId').notEmpty(), body('guestEmail').optional().isEmail()],
   validate,
   paymentController.initiateFlutterwave
 );

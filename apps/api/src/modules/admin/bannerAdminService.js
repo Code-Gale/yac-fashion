@@ -12,7 +12,7 @@ const createBanner = async (data) => {
 };
 
 const updateBanner = async (id, data) => {
-  const doc = await Banner.findByIdAndUpdate(id, data, { new: true });
+  const doc = await Banner.findByIdAndUpdate(id, data, { new: true, runValidators: true });
   await invalidateCacheKeys([CACHE_KEYS.banners]);
   return doc;
 };

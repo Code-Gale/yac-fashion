@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -89,5 +89,13 @@ export default function LoginPage() {
         </p>
       </form>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="w-full max-w-sm text-center">Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

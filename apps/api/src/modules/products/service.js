@@ -25,9 +25,18 @@ const findAll = async (params) => {
   const skip = (page - 1) * limit;
   const sort = getSort(params.sort);
   const query = { isActive: true };
+  const q = params.q != null && String(params.q).trim() ? String(params.q).trim() : '';
+  if (q) {
+    query.$text = { $search: q };
+  }
   if (params.category) {
     const cat = await Category.findOne({ slug: params.category, isActive: true });
-    if (cat) query.category = cat._id;
+    if (cat) {
+      query.category = cat._id;
+    } else {
+      // Invalid category slug provided - return empty result instead of all products
+      return { products: [], total: 0, page, totalPages: 0 };
+    }
   }
   if (params.minPrice != null) query.price = { ...(query.price || {}), $gte: Number(params.minPrice) };
   if (params.maxPrice != null) query.price = { ...(query.price || {}), $lte: Number(params.maxPrice) };
@@ -89,7 +98,7 @@ const update = async (id, data) => {
       await Promise.all(toRemove.map((url) => deleteFromMinio(url)));
     }
   }
-  const updated = await Product.findByIdAndUpdate(id, data, { new: true }).populate('category');
+  const updated = await Product.findByIdAndUpdate(id, data, { new: true, runValidators: true }).populate('category');
   await invalidateProductPublicCaches();
   return updated;
 };
@@ -99,7 +108,7 @@ const softDelete = async (id) => {
   if (product && product.images && product.images.length > 0) {
     await Promise.all(product.images.map((url) => deleteFromMinio(url)));
   }
-  const result = await Product.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  const result = await Product.findByIdAndUpdate(id, { isActive: false }, { new: true, runValidators: true });
   await invalidateProductPublicCaches();
   return result;
 };
@@ -108,7 +117,7 @@ const updateStock = async (id, stock) => {
   const updated = await Product.findByIdAndUpdate(
     id,
     { stock: Math.max(0, Number(stock)) },
-    { new: true }
+    { new: true, runValidators: true }
   );
   await invalidateProductPublicCaches();
   return updated;
@@ -176,13 +185,13 @@ const updateFlashSale = async (id, data) => {
     updated = await Product.findByIdAndUpdate(
       id,
       { $unset: { flashSalePrice: '', flashSaleEndsAt: '' } },
-      { new: true }
+      { new: true, runValidators: true }
     ).populate('category');
   } else {
     const update = {};
     if (data.flashSalePrice != null) update.flashSalePrice = data.flashSalePrice;
     if (data.flashSaleEndsAt != null) update.flashSaleEndsAt = data.flashSaleEndsAt;
-    updated = await Product.findByIdAndUpdate(id, update, { new: true }).populate('category');
+    updated = await Product.findByIdAndUpdate(id, update, { new: true, runValidators: true }).populate('category');
   }
   await invalidateProductPublicCaches();
   return updated;

@@ -12,10 +12,6 @@ export const useAuthStore = create(
   persist(
     (set) => ({
       ...initialState,
-      isAuthenticated: () => {
-        const state = useAuthStore.getState();
-        return !!(state.accessToken && state.user);
-      },
       setAuth: (user, accessToken, refreshToken) =>
         set({ user, accessToken, refreshToken }),
       updateTokens: (accessToken, refreshToken) =>

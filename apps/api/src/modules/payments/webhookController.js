@@ -25,21 +25,10 @@ const processSuccessfulPayment = async (orderId, paymentRef) => {
   order.paymentRef = paymentRef;
   order.status = 'confirmed';
   await order.save();
-  const bulkOps = order.items.map((item) => ({
-    updateOne: {
-      filter: { _id: item.productId },
-      update: { $inc: { stock: -item.quantity } },
-    },
-  }));
-  if (bulkOps.length > 0) {
-    await Product.bulkWrite(bulkOps);
-  }
-  if (order.couponCode) {
-    await Coupon.findOneAndUpdate(
-      { code: order.couponCode },
-      { $inc: { usedCount: 1 } }
-    );
-  }
+  
+  // Stock and coupon are now handled at checkout time for ALL payment methods
+  // No need to decrement stock or increment coupon usage here
+  
   const email = await getOrderCustomerEmail(order);
   if (email) {
     const tpl = paymentReceipt(order);
@@ -84,15 +73,17 @@ const flutterwaveWebhook = async (req, res) => {
   if (!verifHash || !FLUTTERWAVE_SECRET_KEY) {
     return res.status(401).send();
   }
-  const rawBody = Buffer.isBuffer(req.body) ? req.body : (typeof req.body === 'string' ? Buffer.from(req.body) : Buffer.from(JSON.stringify(req.body)));
-  const computedHash = crypto.createHash('sha256').update(rawBody.toString() + FLUTTERWAVE_SECRET_KEY).digest('hex');
-  if (computedHash !== verifHash) {
+  
+  // Flutterwave uses a plain secret hash comparison, not HMAC
+  // The verif-hash header should match your configured webhook secret
+  if (verifHash !== FLUTTERWAVE_SECRET_KEY) {
     return res.status(401).send();
   }
+  
   res.status(200).send();
   let event;
   try {
-    event = typeof req.body === 'object' ? req.body : JSON.parse(rawBody.toString());
+    event = typeof req.body === 'object' ? req.body : JSON.parse(req.body.toString());
   } catch (err) {
     return;
   }

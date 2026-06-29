@@ -164,6 +164,9 @@ const resetPassword = async (token, password) => {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   await userService.updatePassword(user._id, passwordHash);
   await userService.clearPasswordReset(user._id);
+  
+  // Revoke all existing sessions by deleting the refresh token
+  await deleteRefreshToken(user._id.toString());
 };
 
 module.exports = {

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { useCartStore } from '@/store/cart';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -21,6 +21,7 @@ const NAV_LINKS = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const scrollY = useScrollPosition();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -31,7 +32,8 @@ export function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const { user, isAuthenticated, clearAuth } = useAuthStore();
+  const { user, accessToken, clearAuth } = useAuthStore();
+  const isAuthenticated = !!(accessToken && user);
   const itemCount = useCartStore((s) => s.itemCount);
   const { openCart } = useCartStore();
   const wishlistCount = useWishlistStore((s) => s.count);
@@ -84,16 +86,23 @@ export function Header() {
   const [searchFocusedIndex, setSearchFocusedIndex] = useState(-1);
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (!searchOpen || searchResults.length === 0) return;
-    if (e.key === 'ArrowDown') {
+    if (!searchOpen) return;
+    if (e.key === 'ArrowDown' && searchResults.length > 0) {
       e.preventDefault();
       setSearchFocusedIndex((i) => Math.min(i + 1, searchResults.length));
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === 'ArrowUp' && searchResults.length > 0) {
       e.preventDefault();
       setSearchFocusedIndex((i) => Math.max(i - 1, -1));
-    } else if (e.key === 'Enter' && searchFocusedIndex >= 0 && searchResults[searchFocusedIndex]) {
-      e.preventDefault();
-      window.location.href = `/products/${searchResults[searchFocusedIndex].slug}`;
+    } else if (e.key === 'Enter') {
+      if (searchFocusedIndex >= 0 && searchResults[searchFocusedIndex]) {
+        e.preventDefault();
+        window.location.href = `/products/${searchResults[searchFocusedIndex].slug}`;
+      } else if (searchQuery.trim()) {
+        e.preventDefault();
+        router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        setSearchOpen(false);
+        setSearchFocusedIndex(-1);
+      }
     } else if (e.key === 'Escape') {
       setSearchOpen(false);
       setSearchFocusedIndex(-1);
@@ -186,8 +195,14 @@ export function Header() {
                     className="w-full h-9 lg:h-10 px-4 border border-border rounded-md text-sm focus:outline-none focus:border-primary"
                     autoFocus
                   />
-                  {searchResults.length > 0 && (
+                  {(searchResults.length > 0 || searchQuery.trim()) && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-surface rounded-lg shadow-lg border border-border overflow-hidden z-50">
+                      {searchLoading && searchQuery.trim() && (
+                        <div className="px-3 py-2 text-xs text-text-muted">Searching…</div>
+                      )}
+                      {!searchLoading && searchQuery.trim() && searchResults.length === 0 && (
+                        <div className="px-3 py-2 text-xs text-text-muted">No quick matches</div>
+                      )}
                       {searchResults.map((p, i) => (
                         <Link
                           key={p._id}
@@ -213,20 +228,25 @@ export function Header() {
                           </div>
                         </Link>
                       ))}
-                      <Link
-                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
-                        className="block p-3 text-center text-sm text-accent font-medium hover:bg-bg-alt"
-                        onClick={() => setSearchOpen(false)}
-                      >
-                        See all results
-                      </Link>
+                      {searchQuery.trim() && (
+                        <Link
+                          href={`/search?q=${encodeURIComponent(searchQuery.trim())}`}
+                          className="block p-3 text-center text-sm text-accent font-medium hover:bg-bg-alt border-t border-border"
+                          onClick={() => setSearchOpen(false)}
+                        >
+                          See all results
+                        </Link>
+                      )}
                     </div>
                   )}
                 </div>
               ) : (
                 <button
                   type="button"
-                  onClick={() => setSearchOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSearchOpen(true);
+                  }}
                   className="p-2 -m-2 hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
                   aria-label="Search"
                 >

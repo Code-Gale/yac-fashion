@@ -8,6 +8,24 @@ const initiatePaystack = asyncHandler(async (req, res) => {
   if (!order) {
     return error(res, 'Order not found', 404);
   }
+  
+  // Verify ownership: user must own the order (either via userId or guestEmail)
+  const orderUserId = order.userId?.toString?.();
+  const orderGuestEmail = order.guestEmail?.toLowerCase();
+  const requestUserId = req.user?.userId;
+  const providedGuestEmail = req.body.guestEmail?.trim()?.toLowerCase();
+  
+  let hasOwnership = false;
+  if (orderUserId && requestUserId && orderUserId === requestUserId) {
+    hasOwnership = true;
+  } else if (orderGuestEmail && providedGuestEmail && orderGuestEmail === providedGuestEmail) {
+    hasOwnership = true;
+  }
+  
+  if (!hasOwnership) {
+    return error(res, 'Order not found', 404); // Don't leak existence
+  }
+  
   if (order.paymentMethod !== 'paystack') {
     return error(res, 'Order is not a Paystack payment', 400);
   }
@@ -23,6 +41,24 @@ const initiateFlutterwave = asyncHandler(async (req, res) => {
   if (!order) {
     return error(res, 'Order not found', 404);
   }
+  
+  // Verify ownership: user must own the order (either via userId or guestEmail)
+  const orderUserId = order.userId?.toString?.();
+  const orderGuestEmail = order.guestEmail?.toLowerCase();
+  const requestUserId = req.user?.userId;
+  const providedGuestEmail = req.body.guestEmail?.trim()?.toLowerCase();
+  
+  let hasOwnership = false;
+  if (orderUserId && requestUserId && orderUserId === requestUserId) {
+    hasOwnership = true;
+  } else if (orderGuestEmail && providedGuestEmail && orderGuestEmail === providedGuestEmail) {
+    hasOwnership = true;
+  }
+  
+  if (!hasOwnership) {
+    return error(res, 'Order not found', 404); // Don't leak existence
+  }
+  
   if (order.paymentMethod !== 'flutterwave') {
     return error(res, 'Order is not a Flutterwave payment', 400);
   }

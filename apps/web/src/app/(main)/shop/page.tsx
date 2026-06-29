@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ProductCard } from '@/components/shared/ProductCard';
@@ -17,7 +18,7 @@ const SORT_OPTIONS = [
   { value: 'popular', label: 'Most Popular' },
 ];
 
-export default function ShopPage() {
+function ShopPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<{ _id: string; slug: string; name?: string; price?: number; images?: string[] }[]>([]);
@@ -218,5 +219,21 @@ export default function ShopPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen px-4 lg:px-10 py-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonProductCard key={i} />
+          ))}
+        </div>
+      </div>
+    }>
+      <ShopPageContent />
+    </Suspense>
   );
 }

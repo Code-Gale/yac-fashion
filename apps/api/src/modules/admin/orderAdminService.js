@@ -68,8 +68,32 @@ const updateOrderStatus = async (id, status) => {
     err.statusCode = 400;
     throw err;
   }
+  
+  const oldStatus = order.status;
   order.status = status;
   await order.save();
+  
+  // Restore stock when order is cancelled (only if not already cancelled)
+  if (status === 'cancelled' && oldStatus !== 'cancelled') {
+    const bulkOps = order.items.map((item) => ({
+      updateOne: {
+        filter: { _id: item.productId },
+        update: { $inc: { stock: item.quantity } },
+      },
+    }));
+    if (bulkOps.length > 0) {
+      await Product.bulkWrite(bulkOps);
+    }
+    
+    // Decrement coupon usage count if a coupon was used
+    if (order.couponCode) {
+      await Coupon.findOneAndUpdate(
+        { code: order.couponCode },
+        { $inc: { usedCount: -1 } }
+      );
+    }
+  }
+  
   const email = await getOrderCustomerEmail(order);
   if (email) {
     const tpl = orderStatusUpdate(order);
@@ -93,18 +117,10 @@ const updateOrderPayment = async (orderId, paymentStatus, paymentRef) => {
   order.paymentRef = paymentRef ?? order.paymentRef;
   order.status = 'confirmed';
   await order.save();
-  const bulkOps = order.items.map((item) => ({
-    updateOne: {
-      filter: { _id: item.productId },
-      update: { $inc: { stock: -item.quantity } },
-    },
-  }));
-  if (bulkOps.length > 0) {
-    await Product.bulkWrite(bulkOps);
-  }
-  if (order.couponCode) {
-    await Coupon.findOneAndUpdate({ code: order.couponCode }, { $inc: { usedCount: 1 } });
-  }
+  
+  // Stock and coupon are now handled at checkout time for ALL payment methods
+  // No need to decrement stock or increment coupon usage here
+  
   const email = await getOrderCustomerEmail(order);
   if (email) {
     const tpl = paymentReceipt(order);

@@ -40,7 +40,7 @@ const updatePassword = async (userId, passwordHash) => {
 };
 
 const updateName = async (userId, name) => {
-  const user = await User.findByIdAndUpdate(userId, { name: name.trim() }, { new: true }).select('-passwordHash');
+  const user = await User.findByIdAndUpdate(userId, { name: name.trim() }, { new: true, runValidators: true }).select('-passwordHash');
   return user;
 };
 

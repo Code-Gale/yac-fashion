@@ -3,15 +3,18 @@ const orderController = require('./controller');
 const { optionalAuth } = require('../../middleware/optionalAuth');
 const { auth } = require('../../middleware/auth');
 const { cartContextOptional } = require('../../middleware/cartContext');
+const { checkoutRateLimiter, trackingRateLimiter } = require('../../middleware/rateLimiter');
 const { validate } = require('../../middleware/validate');
 const { body } = require('express-validator');
 
 const router = express.Router();
 
-router.get('/track', orderController.track);
+router.get('/shipping-options', orderController.getShippingOptions);
+router.get('/track', trackingRateLimiter, orderController.track);
 
 router.post(
   '/checkout',
+  checkoutRateLimiter,
   optionalAuth,
   cartContextOptional,
   [
@@ -26,8 +29,8 @@ router.post(
     body('shippingAddress.state').trim().notEmpty(),
     body('shippingAddress.phone').trim().notEmpty(),
     body('shippingOption').isObject(),
-    body('shippingOption.label').trim().notEmpty(),
-    body('shippingOption.price').isFloat({ min: 0 }),
+    body('shippingOption.id').trim().notEmpty(),
+    body('shippingOption.price').optional().isFloat({ min: 0 }),
     body('paymentMethod').isIn(['paystack', 'flutterwave', 'bank_transfer', 'cash_on_delivery']),
     body('couponCode').optional().trim(),
   ],
