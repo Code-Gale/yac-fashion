@@ -12,7 +12,7 @@ export default function ReturnsPage() {
             Returns & Refund Policy
           </h1>
           <p className="text-body text-text-muted text-center mb-12">
-            We want you to love your purchase. If you're not completely satisfied, we're here to help.
+            We want you to love your purchase. If you are not completely satisfied, we are here to help.
           </p>
 
           <div className="prose prose-lg max-w-none space-y-8">

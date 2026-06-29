@@ -21,7 +21,7 @@ const faqs = [
   {
     question: 'How can I track my order?',
     answer:
-      'Once your order ships, you'll receive a tracking number via email. You can also view your order status in your account dashboard.',
+      "Once your order ships, you'll receive a tracking number via email. You can also view your order status in your account dashboard.",
   },
   {
     question: 'What payment methods do you accept?',
@@ -31,7 +31,7 @@ const faqs = [
   {
     question: 'How do I know what size to order?',
     answer:
-      'Each product page has a detailed size guide. If you're between sizes, we recommend sizing up for a more comfortable fit.',
+      "Each product page has a detailed size guide. If you're between sizes, we recommend sizing up for a more comfortable fit.",
   },
   {
     question: 'Can I modify or cancel my order?',
@@ -69,7 +69,7 @@ export default function FAQsPage() {
 
           <div className="mt-12 text-center">
             <p className="text-body text-text-muted mb-4">
-              Can't find what you're looking for?
+              Cannot find what you are looking for?
             </p>
             <Link
               href="/contact"
