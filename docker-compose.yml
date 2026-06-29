@@ -45,7 +45,7 @@ services:
     networks:
       - yac-network
     healthcheck:
-      test: ["CMD", "mongosh", "--username", "${MONGO_USER:-yacuser}", "--password", "${MONGO_PASSWORD:-yacpass123}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')", "--quiet"]
+      test: ["CMD-SHELL", "mongosh --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand({ping:1})' --quiet | grep -q '{ ok: 1 }' && echo 0 || echo 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -54,6 +54,8 @@ services:
   redis:
     image: redis:7-alpine
     command: redis-server --requirepass ${REDIS_PASSWORD:-redispass123}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redispass123}
     ports:
       - "127.0.0.1:16379:6379"  # Bind to localhost only for security
     volumes:
@@ -61,7 +63,7 @@ services:
     networks:
       - yac-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redispass123}", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
