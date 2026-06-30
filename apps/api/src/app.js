@@ -86,6 +86,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.use('/api/files', require('./modules/files/routes'));
+
 app.get('/robots.txt', (req, res) => {
   const base = `${req.protocol}://${req.get('host')}`;
   res.type('text/plain');

@@ -7,10 +7,23 @@ const {
   MINIO_SECRET_KEY,
   MINIO_BUCKET,
   MINIO_PUBLIC_URL,
+  CLIENT_URL,
+  NODE_ENV,
 } = require('./env');
 
 const BUCKET = MINIO_BUCKET || 'yac-images';
-const PUBLIC_URL = MINIO_PUBLIC_URL || `http://localhost:9000/${BUCKET}`;
+
+const resolvePublicUrl = () => {
+  if (MINIO_PUBLIC_URL) {
+    return String(MINIO_PUBLIC_URL).replace(/\/+$/, '');
+  }
+  if (CLIENT_URL && NODE_ENV === 'production') {
+    return `${String(CLIENT_URL).replace(/\/+$/, '')}/api/files`;
+  }
+  return `http://localhost:9000/${BUCKET}`;
+};
+
+const PUBLIC_URL = resolvePublicUrl();
 
 const minioClient = new Minio.Client({
   endPoint: MINIO_ENDPOINT || 'localhost',

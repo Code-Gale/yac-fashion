@@ -23,10 +23,18 @@ const uploadToMinio = async (fileBuffer, originalName, mimetype) => {
 
 const deleteFromMinio = async (fileUrl) => {
   if (!fileUrl || typeof fileUrl !== 'string') return;
-  const base = PUBLIC_URL.replace(/\/$/, '');
-  if (!fileUrl.startsWith(base + '/') && !fileUrl.startsWith(base)) return;
-  const filename = fileUrl.replace(base, '').replace(/^\//, '');
-  if (!filename) return;
+
+  let filename = '';
+  if (fileUrl.includes('/api/files/')) {
+    filename = fileUrl.split('/api/files/').pop() || '';
+  } else {
+    const base = PUBLIC_URL.replace(/\/$/, '');
+    if (!fileUrl.startsWith(`${base}/`) && !fileUrl.startsWith(base)) return;
+    filename = fileUrl.replace(base, '').replace(/^\//, '');
+  }
+
+  if (!filename || filename.includes('..') || filename.includes('/')) return;
+
   try {
     await minioClient.removeObject(BUCKET, filename);
   } catch (_) {}
