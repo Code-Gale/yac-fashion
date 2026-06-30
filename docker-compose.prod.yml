@@ -10,8 +10,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4000
-      - MONGO_URI=${MONGO_URI:-mongodb://mongodb:27017/yac-fashion}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Always use Docker service names/ports — ignore localhost values from .env
+      - MONGO_URI=mongodb://mongodb:27017/yac-fashion
+      - REDIS_URL=redis://redis:6379
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
     depends_on:
