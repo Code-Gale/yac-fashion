@@ -157,9 +157,9 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "✅ Nginx is already installed"
     fi
     
-    # Check if nginx.conf exists in project
-    if [ ! -f nginx.conf ]; then
-        echo "❌ Error: nginx.conf not found in project root"
+    # Check if nginx-http.conf exists in project
+    if [ ! -f nginx-http.conf ]; then
+        echo "❌ Error: nginx-http.conf not found in project root"
     else
         echo ""
         echo "Please enter your domain name (e.g., yourdomain.com):"
@@ -169,44 +169,69 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo "❌ Domain name cannot be empty. Skipping Nginx setup."
         else
             echo ""
-            echo "🔧 Configuring Nginx for $DOMAIN..."
-            
-            # Create temporary config with domain substitution
-            sed "s/yourdomain.com/$DOMAIN/g" nginx.conf > /tmp/yac-nginx.conf
-            
-            # Copy to Nginx sites-available
-            sudo cp /tmp/yac-nginx.conf /etc/nginx/sites-available/yac-fashion-house
-            
-            # Remove default site if it exists
+            echo "🔧 Configuring Nginx for $DOMAIN (HTTP first — SSL comes after certbot)..."
+
+            # ACME webroot for Let's Encrypt
+            sudo mkdir -p /var/www/certbot
+
+            # Remove old YAC site configs to avoid duplicate server_name blocks
+            sudo rm -f /etc/nginx/sites-enabled/yac
+            sudo rm -f /etc/nginx/sites-enabled/yac-fashion-house
             sudo rm -f /etc/nginx/sites-enabled/default
-            
-            # Enable the site
+
+            # HTTP-only config (works without SSL certificates)
+            sed "s/yourdomain.com/$DOMAIN/g" nginx-http.conf > /tmp/yac-nginx.conf
+
+            sudo cp /tmp/yac-nginx.conf /etc/nginx/sites-available/yac-fashion-house
             sudo ln -sf /etc/nginx/sites-available/yac-fashion-house /etc/nginx/sites-enabled/
-            
-            # Test Nginx configuration
+
             echo ""
             if sudo nginx -t; then
                 echo "✅ Nginx configuration is valid"
-                
-                # Reload Nginx
                 sudo systemctl reload nginx
                 sudo systemctl enable nginx
-                
-                echo "✅ Nginx configured and reloaded"
+                echo "✅ Nginx configured and reloaded (HTTP on port 80)"
                 echo ""
-                echo "📝 Note: The site is configured for HTTPS but SSL certificates are not yet installed."
+                echo "🌐 Site should be reachable at: http://$DOMAIN"
                 echo ""
-                echo "To enable HTTPS with Let's Encrypt:"
-                echo "  1. Ensure DNS A record points to this server's IP"
-                echo "  2. Install certbot: sudo apt-get install -y certbot python3-certbot-nginx"
-                echo "  3. Run: sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+                read -p "Run certbot now to enable HTTPS? (y/n): " -n 1 -r
                 echo ""
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    if ! command -v certbot &> /dev/null; then
+                        echo "📦 Installing certbot..."
+                        sudo apt-get update
+                        sudo apt-get install -y certbot python3-certbot-nginx
+                    fi
+                    echo ""
+                    echo "Please enter email for Let's Encrypt notifications:"
+                    read -r CERT_EMAIL
+                    if [ -z "$CERT_EMAIL" ]; then
+                        CERT_EMAIL="admin@$DOMAIN"
+                    fi
+                    echo ""
+                    echo "🔒 Obtaining SSL certificate..."
+                    if sudo certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" \
+                        --non-interactive --agree-tos -m "$CERT_EMAIL" --redirect; then
+                        echo "✅ HTTPS enabled! Site: https://$DOMAIN"
+                    else
+                        echo "⚠️  Certbot failed. Common causes:"
+                        echo "   - DNS A record for $DOMAIN not pointing to this server yet"
+                        echo "   - Port 80 blocked by firewall"
+                        echo ""
+                        echo "Retry manually after DNS propagates:"
+                        echo "  sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+                    fi
+                else
+                    echo ""
+                    echo "To enable HTTPS later:"
+                    echo "  sudo apt-get install -y certbot python3-certbot-nginx"
+                    echo "  sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
+                fi
             else
-                echo "❌ Nginx configuration test failed. Please check the configuration."
+                echo "❌ Nginx configuration test failed."
                 sudo rm -f /etc/nginx/sites-enabled/yac-fashion-house
             fi
-            
-            # Cleanup
+
             rm -f /tmp/yac-nginx.conf
         fi
     fi
