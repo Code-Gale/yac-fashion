@@ -1,10 +1,10 @@
+import { getClientApiBaseUrl, getServerApiBaseUrl } from './api-base';
+
 function getApiBaseUrl() {
   if (typeof window === 'undefined') {
-    const internal = process.env.INTERNAL_API_URL || 'http://localhost:4001';
-    return `${String(internal).replace(/\/+$/, '')}/api`;
+    return getServerApiBaseUrl();
   }
-  const pub = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
-  return `${String(pub).replace(/\/+$/, '')}/api`;
+  return getClientApiBaseUrl();
 }
 
 export async function fetchApi(path, options = {}) {

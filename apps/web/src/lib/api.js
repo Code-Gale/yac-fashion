@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { getSessionId } from './session';
+import { getClientApiBaseUrl } from './api-base';
 
-const baseURL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'}/api`;
+const baseURL = getClientApiBaseUrl();
 
 export const api = axios.create({
   baseURL,
