@@ -19,9 +19,12 @@ SKIP_PULL=false
 
 # ─── Helpers ───────────────────────────────────────────────────────────
 
-log()  { echo "$1"; }
 skip() { echo "⏭️  Skipping: $1 (already done)"; }
-done() { echo "✅ $1"; mark_state "$2"; }
+
+step_ok() {
+  echo "✅ $1"
+  [ -n "$2" ] && mark_state "$2"
+}
 
 mark_state() {
   [ -n "$1" ] || return 0
@@ -147,14 +150,14 @@ if [ ! -f .env ]; then
   [ -f .env.example ] && echo "  cp .env.example .env && nano .env"
   exit 1
 fi
-done "Found .env file" "env_ok"
+step_ok "Found .env file" "env_ok"
 
 for cmd in docker; do
   command -v "$cmd" &>/dev/null || { echo "❌ $cmd is not installed"; exit 1; }
 done
 docker compose version &>/dev/null || { echo "❌ Docker Compose not available"; exit 1; }
 docker ps &>/dev/null || { echo "❌ Docker daemon is not running"; exit 1; }
-done "Prerequisites OK" "prereqs_ok"
+step_ok "Prerequisites OK" "prereqs_ok"
 
 # ─── Git pull ───────────────────────────────────────────────────────────
 
@@ -165,7 +168,7 @@ if [ "$SKIP_PULL" = false ] && [ -d .git ]; then
     echo "📥 Pulling latest changes..."
     git pull
     mark_state git_pulled
-    done "Git pull complete"
+    step_ok "Git pull complete"
   fi
 else
   skip "git pull (not a git repo or --no-pull)"
@@ -204,7 +207,7 @@ mark_state docker_deployed
 echo ""
 echo "⏳ Waiting for API to become healthy..."
 if wait_for_api; then
-  done "API is healthy"
+  step_ok "API is healthy"
 else
   echo "⚠️  API health check timed out — check logs:"
   docker compose -f "$COMPOSE_FILE" logs api --tail=20
@@ -226,7 +229,7 @@ else
     echo "🌱 Seeding admin user..."
     docker compose -f "$COMPOSE_FILE" exec -T api npm run seed:admin
     mark_state admin_seeded
-    done "Admin user created"
+    step_ok "Admin user created"
   fi
 fi
 
@@ -241,7 +244,7 @@ else
     echo "🌱 Seeding products..."
     docker compose -f "$COMPOSE_FILE" exec -T api npm run seed
     mark_state products_seeded
-    done "Products seeded"
+    step_ok "Products seeded"
   fi
 fi
 
@@ -262,7 +265,6 @@ if nginx_site_enabled && nginx_config_valid; then
     elif confirm "Retry certbot for HTTPS on $SAVED_DOMAIN?"; then
       :
     else
-      # skip certbot section below
       SAVED_DOMAIN=""
     fi
   fi
@@ -303,7 +305,7 @@ if ! nginx_site_enabled || ! nginx_config_valid; then
           sudo systemctl enable nginx
           set_state_var nginx_domain "$DOMAIN"
           mark_state nginx_configured
-          done "Nginx configured (HTTP) for $DOMAIN"
+          step_ok "Nginx configured (HTTP) for $DOMAIN"
           SAVED_DOMAIN="$DOMAIN"
         else
           echo "❌ Nginx test failed"
@@ -332,7 +334,7 @@ if [ -n "$DOMAIN" ] && ! ssl_cert_exists "$DOMAIN"; then
     if sudo certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" \
         --non-interactive --agree-tos -m "$CERT_EMAIL" --redirect; then
       mark_state ssl_enabled
-      done "HTTPS enabled: https://$DOMAIN"
+      step_ok "HTTPS enabled: https://$DOMAIN"
     else
       echo "⚠️  Certbot failed. Retry when DNS is ready:"
       echo "  sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
