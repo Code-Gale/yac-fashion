@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { AdminImage } from '@/components/admin/AdminImage';
 import {
   LineChart,
   Line,
@@ -162,7 +162,7 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center gap-3">
                   {(r as any).images?.[0] ? (
                     <div className="w-8 h-8 rounded overflow-hidden bg-[#222634] flex-shrink-0">
-                      <Image src={(r as any).images[0]} alt="" width={32} height={32} className="w-full h-full object-cover" />
+                      <AdminImage src={(r as any).images[0]} alt="" width={32} height={32} className="w-full h-full object-cover" />
                     </div>
                   ) : <div className="w-8 h-8 rounded bg-[#222634]" />}
                   <span className="text-[#f0f0f0] truncate max-w-[120px]">{(r as any).name}</span>
@@ -192,7 +192,7 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center gap-3">
                   {(r as any).images?.[0] ? (
                     <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                      <Image src={(r as any).images[0]} alt="" width={32} height={32} className="w-full h-full object-cover" />
+                      <AdminImage src={(r as any).images[0]} alt="" width={32} height={32} className="w-full h-full object-cover" />
                     </div>
                   ) : <div className="w-8 h-8 rounded bg-[#222634]" />}
                   <div className="flex-1 min-w-0">

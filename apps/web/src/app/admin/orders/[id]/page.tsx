@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import { AdminImage } from '@/components/admin/AdminImage';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/ToastContext';
 import { cn } from '@/lib/utils';
@@ -131,7 +131,7 @@ export default function AdminOrderDetailPage() {
               {order.items?.map((item: any, i: number) => (
                 <div key={i} className="flex gap-4 items-center">
                   <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#222634] flex-shrink-0">
-                    {item.image ? <Image src={item.image} alt="" width={48} height={48} className="w-full h-full object-cover" /> : <div className="w-full h-full" />}
+                    {item.image ? <AdminImage src={item.image} alt="" width={48} height={48} className="w-full h-full object-cover" /> : <div className="w-full h-full" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-[#f0f0f0]">{item.name}</p>

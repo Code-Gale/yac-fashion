@@ -6,6 +6,7 @@ const MIME_TO_EXT = {
   'image/jpg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
+  'image/gif': 'gif',
 };
 
 const getExtFromMimetype = (mimetype) => {

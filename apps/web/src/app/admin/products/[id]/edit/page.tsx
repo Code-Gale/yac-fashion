@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import { AdminImage } from '@/components/admin/AdminImage';
 import { api } from '@/lib/api';
+import { resolveImageUrl } from '@/lib/image-url';
 import { useToast } from '@/components/ui/ToastContext';
 import { cn } from '@/lib/utils';
 
@@ -82,7 +83,8 @@ export default function EditProductPage() {
       }
       const { data } = await api.post('/admin/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       const urls = data?.data ?? data;
-      setForm((f) => ({ ...f, images: [...f.images, ...(Array.isArray(urls) ? urls : [])].slice(0, 5) }));
+      const normalized = (Array.isArray(urls) ? urls : []).map(resolveImageUrl);
+      setForm((f) => ({ ...f, images: [...f.images, ...normalized].slice(0, 5) }));
     } catch (err: any) {
       toast(err?.response?.data?.message || 'Upload failed', 'error');
     } finally {
@@ -240,7 +242,7 @@ export default function EditProductPage() {
             <div className="grid grid-cols-3 gap-2 mt-4">
               {form.images.map((url, i) => (
                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-[#222634]">
-                  <Image src={url} alt="" fill className="object-cover" />
+                  <AdminImage src={url} alt="" fill className="object-cover" />
                   <button type="button" onClick={() => removeImage(i)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-[#ef4444] text-white flex items-center justify-center text-sm">×</button>
                 </div>
               ))}

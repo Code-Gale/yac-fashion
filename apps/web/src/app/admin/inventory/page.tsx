@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+import { AdminImage } from '@/components/admin/AdminImage';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { AdminTable } from '@/components/admin/AdminTable';
@@ -105,7 +105,7 @@ export default function AdminInventoryPage() {
               <div className="flex items-center gap-3">
                 {r.images?.[0] ? (
                   <div className="w-8 h-8 rounded overflow-hidden bg-[#222634] flex-shrink-0">
-                    <Image src={r.images[0]} alt="" width={32} height={32} className="w-full h-full object-cover" />
+                    <AdminImage src={r.images[0]} alt="" width={32} height={32} className="w-full h-full object-cover" />
                   </div>
                 ) : <div className="w-8 h-8 rounded bg-[#222634]" />}
                 <span className="text-[#f0f0f0] truncate max-w-[180px]">{r.name}</span>
@@ -137,7 +137,7 @@ export default function AdminInventoryPage() {
               <div className="flex items-center gap-3">
                 {r.images?.[0] ? (
                   <div className="w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                    <Image src={r.images[0]} alt="" width={32} height={32} className="w-full h-full object-cover" />
+                    <AdminImage src={r.images[0]} alt="" width={32} height={32} className="w-full h-full object-cover" />
                   </div>
                 ) : <div className="w-8 h-8 rounded bg-[#222634]" />}
                 <div className="flex-1 min-w-0">

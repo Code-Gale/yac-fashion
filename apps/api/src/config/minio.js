@@ -13,14 +13,25 @@ const {
 
 const BUCKET = MINIO_BUCKET || 'yac-images';
 
+const isDirectMinioUrl = (url) =>
+  /localhost:9000|127\.0\.0\.1:9000|:9000(?:\/|$)/i.test(url) ||
+  url.endsWith(`/${BUCKET}`);
+
 const resolvePublicUrl = () => {
-  if (MINIO_PUBLIC_URL) {
-    return String(MINIO_PUBLIC_URL).replace(/\/+$/, '');
+  const explicit = MINIO_PUBLIC_URL ? String(MINIO_PUBLIC_URL).replace(/\/+$/, '') : '';
+
+  // External CDN/custom host (not direct MinIO)
+  if (explicit && !isDirectMinioUrl(explicit)) {
+    return explicit;
   }
+
+  // Always serve uploads through the API proxy (reachable from the browser)
   if (CLIENT_URL && NODE_ENV === 'production') {
     return `${String(CLIENT_URL).replace(/\/+$/, '')}/api/files`;
   }
-  return `http://localhost:9000/${BUCKET}`;
+
+  const port = parseInt(process.env.PORT || '4000', 10);
+  return `http://localhost:${port}/api/files`;
 };
 
 const PUBLIC_URL = resolvePublicUrl();

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { AdminImage } from '@/components/admin/AdminImage';
 import { api } from '@/lib/api';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastContext';
@@ -154,7 +154,7 @@ export default function AdminBannersPage() {
                 <tr key={b._id} className="border-b border-white/10 hover:bg-white/5">
                   <td className="py-3 px-4">
                     <div className="w-16 h-10 rounded overflow-hidden bg-[#222634] flex-shrink-0">
-                      {b.imageUrl ? <Image src={b.imageUrl} alt="" width={60} height={40} className="w-full h-full object-cover" /> : null}
+                      {b.imageUrl ? <AdminImage src={b.imageUrl} alt="" width={60} height={40} className="w-full h-full object-cover" /> : null}
                     </div>
                   </td>
                   <td className="py-3 px-4">
@@ -198,7 +198,7 @@ export default function AdminBannersPage() {
             <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Image *</label>
             <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" id="banner-img" />
             <label htmlFor="banner-img" className="block min-h-[120px] border-2 border-dashed border-[rgba(255,255,255,0.08)] rounded-lg p-4 text-center cursor-pointer hover:border-[#c9a84c] text-[#8b92a5]">
-              {form.imageUrl ? <Image src={form.imageUrl} alt="" width={300} height={120} className="mx-auto rounded max-h-32 object-cover" /> : uploading ? 'Uploading...' : 'Click to upload'}
+              {form.imageUrl ? <AdminImage src={form.imageUrl} alt="" width={300} height={120} className="mx-auto rounded max-h-32 object-cover" /> : uploading ? 'Uploading...' : 'Click to upload'}
             </label>
           </div>
           <div>
