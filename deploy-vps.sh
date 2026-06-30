@@ -179,6 +179,30 @@ setup_nginx() {
   return 1
 }
 
+# Ensure /api/files/*.jpg routes to the API (regex static cache must not override)
+patch_nginx_api_routing() {
+  local site=""
+  for site in /etc/nginx/sites-available/yac-fashion-house /etc/nginx/sites-enabled/yac-fashion-house; do
+    [ -f "$site" ] || continue
+    if grep -q 'location /api/ {' "$site" 2>/dev/null; then
+      echo "🔧 Patching Nginx API routing in $site..."
+      sudo sed -i 's/location \/api\/ {/location ^~ \/api\/ {/g' "$site"
+    fi
+    if grep -qE 'location ~\* \\.(jpg\|jpeg\|png\|gif\|ico\|css\|js\|svg\|woff\|woff2\|ttf\|eot)\$' "$site" 2>/dev/null \
+      && ! grep -q '(?!api/)' "$site" 2>/dev/null; then
+      sudo sed -i 's/location ~\* \\.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)\$/location ~* ^\\/(?!api\\\/).*\\.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)\$/g' "$site"
+    fi
+    if sudo nginx -t 2>/dev/null; then
+      sudo systemctl reload nginx
+      step_ok "Nginx API routing patched"
+      return 0
+    fi
+    echo "⚠️  Nginx test failed after patch — restore from backup if needed"
+    return 1
+  done
+  return 0
+}
+
 setup_ssl() {
   local domain="$1"
   local cert_email
@@ -372,6 +396,7 @@ DOMAIN="$SAVED_DOMAIN"
 if nginx_site_enabled && nginx_config_valid; then
   skip "Nginx setup (site already enabled and valid)"
   echo "   Domain: ${DOMAIN:-unknown}"
+  patch_nginx_api_routing || true
 else
   if should_run "Configure Nginx for ${DOMAIN:-your domain}?"; then
     setup_nginx "$DOMAIN" || true
