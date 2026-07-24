@@ -26,7 +26,7 @@ const faqs = [
   {
     question: 'What payment methods do you accept?',
     answer:
-      'We accept all major credit cards, debit cards, Paystack, Flutterwave, cash on delivery, and bank transfer.',
+      'We accept all major credit cards, debit cards, Paystack, cash on delivery, and bank transfer.',
   },
   {
     question: 'How do I know what size to order?',

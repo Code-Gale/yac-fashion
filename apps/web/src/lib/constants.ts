@@ -14,7 +14,6 @@ export const SHIPPING_OPTIONS = [
 
 export const PAYMENT_METHODS = {
   paystack: { id: 'paystack', label: 'Paystack', description: 'Pay securely with card, bank transfer, USSD' },
-  flutterwave: { id: 'flutterwave', label: 'Flutterwave', description: 'Card, bank transfer, mobile money' },
   bank_transfer: { id: 'bank_transfer', label: 'Bank Transfer', description: 'Manual bank transfer' },
   cash_on_delivery: { id: 'cash_on_delivery', label: 'Cash on Delivery', description: 'Pay when your order arrives' },
 };

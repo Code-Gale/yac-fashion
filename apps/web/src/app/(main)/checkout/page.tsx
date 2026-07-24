@@ -154,12 +154,7 @@ export default function CheckoutPage() {
         window.location.href = res.paymentInitiation.authorizationUrl;
         return;
       }
-      if (paymentMethod === 'flutterwave' && res?.paymentInitiation?.paymentLink) {
-        clearCart();
-        window.location.href = res.paymentInitiation.paymentLink;
-        return;
-      }
-      if ((paymentMethod === 'paystack' || paymentMethod === 'flutterwave') && res?.paymentError) {
+      if (paymentMethod === 'paystack' && res?.paymentError) {
         // Order was created and stock was reserved, but the gateway call itself
         // failed (e.g. gateway outage). Don't lose the order — offer an inline
         // retry instead of pretending checkout succeeded or discarding it.
@@ -191,8 +186,7 @@ export default function CheckoutPage() {
     setRetryLoading(true);
     try {
       const emailParam = !isAuthenticated ? formAddress.email : (user as { email?: string })?.email;
-      const endpoint = pendingOrder.paymentMethod === 'paystack' ? '/payments/paystack/initialize' : '/payments/flutterwave/initialize';
-      const { data } = await api.post(endpoint, {
+      const { data } = await api.post('/payments/paystack/initialize', {
         orderNumber: pendingOrder.orderNumber,
         guestEmail: !isAuthenticated ? emailParam : undefined,
       });
@@ -684,7 +678,7 @@ export default function CheckoutPage() {
               <p className="text-xs text-text-muted mt-4 flex items-center gap-2 flex-wrap">
                 <span>🔒 SSL encrypted</span>
                 <span>·</span>
-                <span>Powered by Paystack/Flutterwave</span>
+                <span>Powered by Paystack</span>
                 <span>·</span>
                 <span>100% secure</span>
               </p>

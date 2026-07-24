@@ -36,7 +36,7 @@ export function TrustStrip() {
         </svg>
       ),
       label: 'Secure Payment',
-      sub: 'Paystack & Flutterwave',
+      sub: 'Powered by Paystack',
     },
   ];
 
