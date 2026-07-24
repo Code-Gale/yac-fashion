@@ -3,7 +3,7 @@ const Product = require('../products/model');
 const couponService = require('../coupons/service');
 const cartService = require('../cart/service');
 const paymentService = require('../payments/service');
-const { validateShippingOption } = require('../../config/shipping');
+const { resolveShippingOption } = require('../shipping/service');
 const { sendEmail } = require('../../utils/email');
 const { orderConfirmation } = require('../../utils/emailTemplates');
 const { PAYSTACK_PUBLIC_KEY, FLUTTERWAVE_PUBLIC_KEY, CLIENT_URL } = require('../../config/env');
@@ -38,16 +38,15 @@ const checkout = async (data, userId, cartKey) => {
     throw err;
   }
   
-  // Validate shipping option against server-side configuration
-  const shippingValidation = validateShippingOption(shippingOption);
-  if (!shippingValidation.valid) {
-    const err = new Error(shippingValidation.error || 'Invalid shipping option');
+  // Resolve shipping price/estimate server-side for the customer's state —
+  // never trust a client-provided price. This looks up the active shipping
+  // method by id, then applies any per-state rate override on top of it.
+  const validatedShipping = await resolveShippingOption(shippingOption.id, shippingAddress.state);
+  if (!validatedShipping) {
+    const err = new Error('Invalid shipping option');
     err.statusCode = 400;
     throw err;
   }
-  
-  // Use server-validated shipping option (ignore client-provided price)
-  const validatedShipping = shippingValidation.option;
   const validMethods = ['paystack', 'flutterwave', 'bank_transfer', 'cash_on_delivery'];
   if (!validMethods.includes(paymentMethod)) {
     const err = new Error('Invalid payment method');

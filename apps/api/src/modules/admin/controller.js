@@ -6,6 +6,7 @@ const inventoryService = require('./inventoryService');
 const reportService = require('./reportService');
 const bannerAdminService = require('./bannerAdminService');
 const abandonedCartService = require('./abandonedCartService');
+const shippingAdminService = require('./shippingAdminService');
 const { invalidateCacheKeys, CACHE_KEYS } = require('../../utils/cache');
 const { success, error } = require('../../utils/response');
 const { asyncHandler } = require('../../utils/asyncHandler');
@@ -144,6 +145,55 @@ const getAbandonedCarts = asyncHandler(async (req, res) => {
   success(res, data);
 });
 
+const getShippingMethods = asyncHandler(async (req, res) => {
+  const methods = await shippingAdminService.getMethods();
+  success(res, methods);
+});
+
+const createShippingMethod = asyncHandler(async (req, res) => {
+  try {
+    const method = await shippingAdminService.createMethod(req.body);
+    success(res, method, 201);
+  } catch (err) {
+    if (err.statusCode === 400) return error(res, err.message, 400);
+    throw err;
+  }
+});
+
+const updateShippingMethod = asyncHandler(async (req, res) => {
+  const method = await shippingAdminService.updateMethod(req.params.id, req.body);
+  if (!method) return error(res, 'Shipping method not found', 404);
+  success(res, method);
+});
+
+const deleteShippingMethod = asyncHandler(async (req, res) => {
+  const method = await shippingAdminService.deleteMethod(req.params.id);
+  if (!method) return error(res, 'Shipping method not found', 404);
+  success(res, { deleted: true });
+});
+
+const getShippingRates = asyncHandler(async (req, res) => {
+  const rates = await shippingAdminService.getRates(req.params.id);
+  success(res, rates);
+});
+
+const upsertShippingRate = asyncHandler(async (req, res) => {
+  try {
+    const rate = await shippingAdminService.upsertRate(req.params.id, req.body.state, req.body);
+    if (!rate) return error(res, 'Shipping method not found', 404);
+    success(res, rate, 201);
+  } catch (err) {
+    if (err.statusCode === 400) return error(res, err.message, 400);
+    throw err;
+  }
+});
+
+const deleteShippingRate = asyncHandler(async (req, res) => {
+  const rate = await shippingAdminService.deleteRate(req.params.rateId);
+  if (!rate) return error(res, 'Rate not found', 404);
+  success(res, { deleted: true });
+});
+
 module.exports = {
   getDashboard,
   getCustomers,
@@ -167,4 +217,11 @@ module.exports = {
   deleteBanner,
   getAbandonedCarts,
   updateCustomerRole,
+  getShippingMethods,
+  createShippingMethod,
+  updateShippingMethod,
+  deleteShippingMethod,
+  getShippingRates,
+  upsertShippingRate,
+  deleteShippingRate,
 };

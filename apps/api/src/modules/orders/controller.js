@@ -1,6 +1,6 @@
 const orderService = require('./service');
 const Review = require('../reviews/model');
-const { getAllActiveShippingOptions } = require('../../config/shipping');
+const shippingService = require('../shipping/service');
 const { success, error } = require('../../utils/response');
 const { asyncHandler } = require('../../utils/asyncHandler');
 
@@ -12,7 +12,7 @@ const track = asyncHandler(async (req, res) => {
 });
 
 const getShippingOptions = asyncHandler(async (req, res) => {
-  const options = getAllActiveShippingOptions();
+  const options = await shippingService.getOptionsForState(req.query.state);
   success(res, options);
 });
 

@@ -141,6 +141,52 @@ router.delete('/banners/:id', adminFullAccess, adminController.deleteBanner);
 
 router.get('/abandoned-carts', adminFullAccess, adminController.getAbandonedCarts);
 
+router.get('/shipping/methods', adminFullAccess, adminController.getShippingMethods);
+router.post(
+  '/shipping/methods',
+  adminFullAccess,
+  [
+    body('label').trim().notEmpty(),
+    body('price').isFloat({ min: 0 }),
+    body('key').optional().trim(),
+    body('description').optional().trim(),
+    body('estimatedDays').optional().trim(),
+    body('isActive').optional().isBoolean(),
+    body('sortOrder').optional().isInt(),
+  ],
+  validate,
+  adminController.createShippingMethod
+);
+router.put(
+  '/shipping/methods/:id',
+  adminFullAccess,
+  [
+    body('label').optional().trim().notEmpty(),
+    body('price').optional().isFloat({ min: 0 }),
+    body('description').optional().trim(),
+    body('estimatedDays').optional().trim(),
+    body('isActive').optional().isBoolean(),
+    body('sortOrder').optional().isInt(),
+  ],
+  validate,
+  adminController.updateShippingMethod
+);
+router.delete('/shipping/methods/:id', adminFullAccess, adminController.deleteShippingMethod);
+
+router.get('/shipping/methods/:id/rates', adminFullAccess, adminController.getShippingRates);
+router.post(
+  '/shipping/methods/:id/rates',
+  adminFullAccess,
+  [
+    body('state').trim().notEmpty(),
+    body('price').isFloat({ min: 0 }),
+    body('estimatedDays').optional().trim(),
+  ],
+  validate,
+  adminController.upsertShippingRate
+);
+router.delete('/shipping/rates/:rateId', adminFullAccess, adminController.deleteShippingRate);
+
 router.post(
   '/upload',
   adminFullAccess,

@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 const NAV_SECTIONS = [
   { label: 'OVERVIEW', items: [{ href: '/admin', label: 'Dashboard', icon: 'chart' }] },
   { label: 'CATALOGUE', items: [{ href: '/admin/products', label: 'Products', icon: 'box' }, { href: '/admin/categories', label: 'Categories', icon: 'folder' }] },
-  { label: 'COMMERCE', items: [{ href: '/admin/orders', label: 'Orders', icon: 'cart' }, { href: '/admin/inventory', label: 'Inventory', icon: 'package' }] },
+  { label: 'COMMERCE', items: [{ href: '/admin/orders', label: 'Orders', icon: 'cart' }, { href: '/admin/inventory', label: 'Inventory', icon: 'package' }, { href: '/admin/shipping', label: 'Shipping', icon: 'truck' }] },
   { label: 'CUSTOMERS', items: [{ href: '/admin/customers', label: 'Customers', icon: 'users' }, { href: '/admin/coupons', label: 'Coupons', icon: 'tag' }] },
   { label: 'CONTENT', items: [{ href: '/admin/banners', label: 'Banners', icon: 'image' }] },
   { label: 'ANALYTICS', items: [{ href: '/admin/reports', label: 'Reports', icon: 'bar' }] },
@@ -27,13 +27,14 @@ function Icon({ name }: { name: string }) {
   if (name === 'tag') return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>;
   if (name === 'image') return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
   if (name === 'bar') return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
+  if (name === 'truck') return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 13h13V6H3v7zm13 0h2.5l2.5 3v3h-5v-6zM6 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm11 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>;
   if (name === 'menu') return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>;
   if (name === 'x') return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
   if (name === 'logout') return <svg className={cls} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>;
   return null;
 }
 
-const STAFF_HIDDEN = ['/admin/customers', '/admin/coupons', '/admin/reports'];
+const STAFF_HIDDEN = ['/admin/customers', '/admin/coupons', '/admin/reports', '/admin/shipping'];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

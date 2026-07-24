@@ -72,17 +72,6 @@ export default function CheckoutPage() {
   }, [items, subtotal, discount]);
 
   useEffect(() => {
-    // Shipping options must come from the API — the server validates the
-    // submitted option by id+price, so any hardcoded/mismatched frontend
-    // copy would make checkout fail (or silently overcharge/undercharge).
-    api.get('/orders/shipping-options').then(({ data }) => {
-      const opts = data?.data ?? data ?? [];
-      const list = Array.isArray(opts) ? opts : [];
-      setShippingOptions(list);
-    }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
     if (isAuthenticated) {
       api.get('/account/addresses').then(({ data }) => {
         const addrs = data?.data ?? data ?? [];
@@ -101,6 +90,27 @@ export default function CheckoutPage() {
     : selectedAddress
     ? { name: (user as { name?: string })?.name || 'Customer', phone: selectedAddress.phone || '', street: selectedAddress.street || '', city: selectedAddress.city || '', state: selectedAddress.state || '' }
     : null;
+
+  useEffect(() => {
+    // Shipping options must come from the API — the server validates the
+    // submitted option by id+price, so any hardcoded/mismatched frontend
+    // copy would make checkout fail (or silently overcharge/undercharge).
+    // Prices can vary by state, so refetch whenever the delivery state
+    // changes and re-apply the (possibly updated) price to whatever
+    // option is currently selected.
+    const state = shippingAddress?.state;
+    const params = state ? `?state=${encodeURIComponent(state)}` : '';
+    api.get(`/orders/shipping-options${params}`).then(({ data }) => {
+      const opts = data?.data ?? data ?? [];
+      const list = Array.isArray(opts) ? opts : [];
+      setShippingOptions(list);
+      setShippingOption((prev) => {
+        if (!prev) return prev;
+        const match = list.find((o: ShippingOption) => o.id === prev.id);
+        return match ?? prev;
+      });
+    }).catch(() => {});
+  }, [shippingAddress?.state]);
 
   // Exactly what's blocking "Continue" — surfaced to the user instead of a
   // silently disabled button, since that gave no indication of what to fix.
@@ -485,6 +495,9 @@ export default function CheckoutPage() {
                   <p className="text-sm text-text-muted">Loading shipping options…</p>
                 ) : (
                   <>
+                {!shippingAddress?.state && (
+                  <p className="text-xs text-text-muted mb-3">Select a state above to see accurate delivery prices for your area.</p>
+                )}
                 {step1Attempted && !shippingOption && (
                   <p className="text-sm text-error mb-3">Please select a shipping option</p>
                 )}
