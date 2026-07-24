@@ -22,9 +22,12 @@ function TrustIcon({ name }) {
 
 function HeroTrustRow() {
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-8">
+    <div className="flex flex-wrap items-center gap-2 mt-8">
       {TRUST_ITEMS.map((item) => (
-        <span key={item.label} className="flex items-center gap-2 text-white/70 text-xs sm:text-sm tracking-wide">
+        <span
+          key={item.label}
+          className="flex items-center gap-1.5 bg-white/10 border border-white/15 backdrop-blur-sm rounded-full pl-2.5 pr-3.5 py-1.5 text-white/90 text-[11px] sm:text-xs font-medium tracking-wide"
+        >
           <TrustIcon name={item.icon} />
           {item.label}
         </span>

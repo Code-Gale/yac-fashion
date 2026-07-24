@@ -11,16 +11,16 @@ export function AnnouncementMarquee() {
   const sequence = [...ITEMS, ...ITEMS];
 
       return (
-    <div className="bg-[#0f0f1a] border-y border-[#c9a84c]/20 overflow-hidden py-3">
+    <div className="bg-[#c9a84c] overflow-hidden py-2.5">
       <div className="flex w-max animate-marquee">
         {[0, 1].map((dupe) => (
           <div key={dupe} className="flex items-center shrink-0">
             {sequence.map((text, i) => (
               <span key={`${dupe}-${i}`} className="flex items-center shrink-0">
-                <span className="text-[#c9a84c] text-xs font-medium tracking-[0.2em] px-6 whitespace-nowrap">
+                <span className="text-[#1a1a2e] text-[11px] sm:text-xs font-semibold tracking-[0.15em] sm:tracking-[0.2em] px-4 sm:px-6 whitespace-nowrap">
                   {text}
                 </span>
-                    <span className="w-1 h-1 rounded-full bg-[#c9a84c]/50" aria-hidden />
+                <span className="w-1 h-1 rounded-full bg-[#1a1a2e]/40" aria-hidden />
               </span>
             ))}
           </div>

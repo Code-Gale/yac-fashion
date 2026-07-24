@@ -42,10 +42,16 @@ export function TrustStrip() {
 
   return (
     <section className="border-b border-[#e8e6e1] bg-white">
-      <div className="max-w-7xl mx-auto px-6 lg:px-16 xl:px-24">
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#e8e6e1]">
+      <div className="max-w-7xl mx-auto">
+        <div
+          className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide px-6 py-5 lg:px-16 xl:px-24 lg:py-0 lg:grid lg:grid-cols-4 lg:gap-0 lg:divide-x lg:divide-[#e8e6e1] lg:overflow-visible"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {items.map((item, i) => (
-            <div key={i} className="flex items-center gap-4 py-6 lg:py-8 px-4 lg:px-6">
+            <div
+              key={i}
+              className="flex-shrink-0 w-[72vw] sm:w-72 snap-center flex items-center gap-4 rounded-xl border border-[#e8e6e1] p-4 lg:border-0 lg:rounded-none lg:w-auto lg:flex-shrink lg:py-8 lg:px-6"
+            >
               <div className="flex-shrink-0 w-11 h-11 rounded-full bg-[#f5edd6] ring-1 ring-[#c9a84c]/30 flex items-center justify-center text-[#c9a84c]">
                 {item.icon}
               </div>
