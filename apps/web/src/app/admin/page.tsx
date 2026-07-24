@@ -215,7 +215,9 @@ export default function AdminDashboardPage() {
           <AdminTable
             columns={[
               { key: 'order', label: 'Order', render: (r: any) => <span className="font-medium text-[#f0f0f0]">{r.orderNumber}</span> },
-              { key: 'customer', label: 'Customer', hideOnMobile: true, render: (r: any) => (r.userId?.name ?? r.guestEmail ?? '—') },
+              { key: 'customer', label: 'Customer', hideOnMobile: true, render: (r: any) => (
+                <span className="text-[#f0f0f0]">{r.userId?.name || r.shippingAddress?.name || (r.guestEmail ? 'Guest' : '—')}</span>
+              ) },
               { key: 'total', label: 'Total', render: (r: any) => <span className="font-display text-[#c9a84c]">₦{(r.total ?? 0).toLocaleString()}</span> },
               { key: 'status', label: 'Status', render: (r: any) => (
                 <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: `${STATUS_COLORS[r.status] || '#8b92a5'}20`, color: STATUS_COLORS[r.status] || '#8b92a5' }}>{r.status}</span>
@@ -230,7 +232,7 @@ export default function AdminDashboardPage() {
                   <span className="font-medium text-[#f0f0f0]">{r.orderNumber}</span>
                   <span className="text-xs text-[#8b92a5]">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</span>
                 </div>
-                <p className="text-sm text-[#8b92a5] mb-2">{r.userId?.name ?? r.guestEmail ?? '—'}</p>
+                <p className="text-sm text-[#8b92a5] mb-2">{r.userId?.name || r.shippingAddress?.name || (r.guestEmail ? 'Guest' : '—')}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: `${STATUS_COLORS[r.status] || '#8b92a5'}20`, color: STATUS_COLORS[r.status] || '#8b92a5' }}>{r.status}</span>
                   <span className="font-display text-[#c9a84c]">₦{(r.total ?? 0).toLocaleString()}</span>
