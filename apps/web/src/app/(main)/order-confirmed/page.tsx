@@ -38,12 +38,16 @@ export default function OrderConfirmedPage() {
   const [mounted, setMounted] = useState(false);
   const purchaseTracked = useRef(false);
 
-  const reference = searchParams.get('reference');
-  const transactionId = searchParams.get('transaction_id');
+  const reference = searchParams.get('reference'); // Paystack
+  const transactionId = searchParams.get('transaction_id'); // Flutterwave
+  const gatewayStatus = searchParams.get('status'); // Flutterwave: successful | cancelled | failed
   const orderNumberParam = searchParams.get('orderNumber');
   const emailParam = searchParams.get('email');
   const orderNumber = orderNumberParam || order?.orderNumber;
   const isPending = searchParams.get('pending') === '1';
+  const gatewayCancelledOrFailed = gatewayStatus === 'cancelled' || gatewayStatus === 'failed';
+  const [retryLoading, setRetryLoading] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -65,32 +69,83 @@ export default function OrderConfirmedPage() {
         if (res) setOrder(res);
       } catch (_) {}
     };
-    if (reference || transactionId) {
-      if (orderNumberParam) {
-        fetchOrder(orderNumberParam, emailParam || undefined).finally(() => setLoading(false));
-      } else {
-        setOrder({ orderNumber: undefined, status: 'confirmed' });
-        setLoading(false);
+
+    const verifyAndFetch = async (orderNumber: string, email?: string) => {
+      // Best-effort client-triggered confirmation — the webhook is the
+      // authoritative path, but this closes the gap where a webhook is
+      // delayed, blocked, or misconfigured on the gateway dashboard.
+      // Never trust this alone: the subsequent /orders/track fetch reflects
+      // the real, server-verified order status regardless of outcome here.
+      try {
+        if (reference) {
+          await api.post('/payments/paystack/verify', {
+            orderNumber,
+            reference,
+            guestEmail: email || undefined,
+          });
+        } else if (transactionId && !gatewayCancelledOrFailed) {
+          await api.post('/payments/flutterwave/verify', {
+            orderNumber,
+            transactionId,
+            guestEmail: email || undefined,
+          });
+        }
+      } catch (_) {
+        // Ignore — could be an amount mismatch, already paid (webhook won
+        // the race), or a transient gateway error. Track fetch below wins.
       }
-    } else if (orderNumberParam && emailParam) {
-      fetchOrder(orderNumberParam, emailParam).finally(() => setLoading(false));
-    } else if (orderNumberParam) {
-      setOrder({ orderNumber: orderNumberParam, status: 'pending' });
-      setLoading(false);
+      await fetchOrder(orderNumber, email);
+    };
+
+    if (orderNumberParam) {
+      verifyAndFetch(orderNumberParam, emailParam || undefined).finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, [mounted, orderNumberParam, emailParam, reference, transactionId]);
+  }, [mounted, orderNumberParam, emailParam, reference, transactionId, gatewayCancelledOrFailed]);
 
   const paymentMethod = order?.paymentMethod || '';
   const isCod = paymentMethod === 'cash_on_delivery';
   const isBankTransfer = paymentMethod === 'bank_transfer';
+  const isOnlinePayment = paymentMethod === 'paystack' || paymentMethod === 'flutterwave';
+  const isPaid = order?.status === 'confirmed' || order?.status === 'delivered' || order?.status === 'processing' || order?.status === 'shipped';
+  const paymentFailed = isOnlinePayment && !isPaid && (gatewayCancelledOrFailed || Boolean(retryError));
   const isPendingOrder = isBankTransfer
     ? (order?.status && !['confirmed', 'delivered'].includes(order.status))
     : !isCod && (isPending || (order?.status && !['confirmed', 'delivered'].includes(order.status)));
 
+  const handleRetryPayment = async () => {
+    if (!orderNumberParam || !isOnlinePayment) return;
+    setRetryLoading(true);
+    setRetryError(null);
+    try {
+      const endpoint = paymentMethod === 'paystack' ? '/payments/paystack/initialize' : '/payments/flutterwave/initialize';
+      const { data } = await api.post(endpoint, {
+        orderNumber: orderNumberParam,
+        guestEmail: emailParam || undefined,
+      });
+      const res = data?.data ?? data;
+      if (res?.authorizationUrl) {
+        window.location.href = res.authorizationUrl;
+        return;
+      }
+      if (res?.paymentLink) {
+        window.location.href = res.paymentLink;
+        return;
+      }
+      setRetryError('Still unable to start payment. Please try again in a moment.');
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : null;
+      setRetryError(msg || 'Still unable to start payment. Please try again in a moment.');
+    } finally {
+      setRetryLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!mounted || loading || isPendingOrder || purchaseTracked.current) return;
+    if (!mounted || loading || isPendingOrder || paymentFailed || purchaseTracked.current) return;
     const txnId = reference || transactionId || orderNumberParam || order?.orderNumber;
     const value = order?.total ?? 0;
     const items = order?.items ?? [];
@@ -120,7 +175,13 @@ export default function OrderConfirmedPage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md text-center">
         <div className="mb-8">
-          {isPendingOrder ? (
+          {paymentFailed ? (
+            <div className="w-24 h-24 mx-auto rounded-full bg-error/20 flex items-center justify-center">
+              <svg className="w-12 h-12 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+          ) : isPendingOrder ? (
             <div className="w-24 h-24 mx-auto rounded-full bg-warning/20 flex items-center justify-center">
               <svg className="w-12 h-12 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -137,7 +198,9 @@ export default function OrderConfirmedPage() {
         </div>
 
         <h1 className="font-display font-semibold text-3xl text-primary mb-2">
-          {isCod
+          {paymentFailed
+            ? 'Payment Not Completed'
+            : isCod
             ? 'Order Confirmed!'
             : isBankTransfer && isPendingOrder
             ? 'Order Received — Awaiting Payment'
@@ -149,7 +212,18 @@ export default function OrderConfirmedPage() {
           <p className="text-text-muted mb-4">Order #{orderNumber}</p>
         )}
 
-        {isCod ? (
+        {paymentFailed ? (
+          <>
+            <p className="text-body text-text-muted mb-4">
+              {gatewayCancelledOrFailed
+                ? 'Your payment was cancelled or did not go through. Your order is saved — you can retry payment below.'
+                : retryError}
+            </p>
+            <Button variant="accent" size="lg" fullWidth onClick={handleRetryPayment} loading={retryLoading} disabled={retryLoading} className="mb-6">
+              Retry Payment
+            </Button>
+          </>
+        ) : isCod ? (
           <p className="text-body text-text-muted mb-6">
             Pay on delivery when your order arrives.
           </p>

@@ -19,6 +19,10 @@ module.exports = {
   PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY,
   FLUTTERWAVE_SECRET_KEY: process.env.FLUTTERWAVE_SECRET_KEY,
   FLUTTERWAVE_PUBLIC_KEY: process.env.FLUTTERWAVE_PUBLIC_KEY,
+  // Dedicated webhook verification secret (Flutterwave dashboard > Settings > Webhooks > Secret Hash).
+  // Falls back to FLUTTERWAVE_SECRET_KEY if unset, but a dedicated hash is recommended
+  // so a leaked webhook secret can't be used to call the Flutterwave API.
+  FLUTTERWAVE_WEBHOOK_SECRET_HASH: process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH,
   MAIL_HOST: process.env.MAIL_HOST,
   MAIL_PORT: parseInt(process.env.MAIL_PORT || '465', 10),
   MAIL_SECURE: process.env.MAIL_SECURE === 'true',

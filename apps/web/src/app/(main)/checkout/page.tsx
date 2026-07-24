@@ -8,7 +8,7 @@ import { useCart } from '@/hooks/useCart';
 import { useAuthStore } from '@/store/auth';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
-import { NIGERIAN_STATES, SHIPPING_OPTIONS, PAYMENT_METHODS, BANK_TRANSFER, COD_AVAILABLE } from '@/lib/constants';
+import { NIGERIAN_STATES, PAYMENT_METHODS, BANK_TRANSFER, COD_AVAILABLE } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { trackBeginCheckout } from '@/lib/analytics';
 import { trackInitiateCheckout } from '@/lib/fbPixel';
@@ -24,6 +24,14 @@ type Address = {
   isDefault?: boolean;
 };
 
+type ShippingOption = {
+  id: string;
+  label: string;
+  price: number;
+  estimatedDays?: string;
+  description?: string;
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, coupon, discount, applyCoupon, removeCoupon, clearCart } = useCart();
@@ -34,12 +42,16 @@ export default function CheckoutPage() {
   const [useNewAddress, setUseNewAddress] = useState(false);
   const [formAddress, setFormAddress] = useState({ name: '', phone: '', street: '', city: '', state: '', email: '' });
   const [saveAddress, setSaveAddress] = useState(false);
-  const [shippingOption, setShippingOption] = useState<typeof SHIPPING_OPTIONS[0] | null>(null);
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [shippingOption, setShippingOption] = useState<ShippingOption | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [orderSummaryOpen, setOrderSummaryOpen] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [pendingOrder, setPendingOrder] = useState<{ orderNumber: string; paymentMethod: string } | null>(null);
+  const [retryLoading, setRetryLoading] = useState(false);
   const checkoutTracked = useRef(false);
 
   const shippingFee = shippingOption?.price ?? 0;
@@ -55,6 +67,17 @@ export default function CheckoutPage() {
       trackTikTokInitiateCheckout(value);
     }
   }, [items, subtotal, discount]);
+
+  useEffect(() => {
+    // Shipping options must come from the API — the server validates the
+    // submitted option by id+price, so any hardcoded/mismatched frontend
+    // copy would make checkout fail (or silently overcharge/undercharge).
+    api.get('/orders/shipping-options').then(({ data }) => {
+      const opts = data?.data ?? data ?? [];
+      const list = Array.isArray(opts) ? opts : [];
+      setShippingOptions(list);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -94,29 +117,41 @@ export default function CheckoutPage() {
     if (!isAuthenticated && !formAddress.email) return;
 
     setCheckoutLoading(true);
+    setPaymentError(null);
     try {
       const payload = {
         items: items.map((i: { productId: string; quantity?: number }) => ({ productId: i.productId, quantity: i.quantity ?? 1 })),
         shippingAddress,
-        shippingOption: { label: shippingOption.label, price: shippingOption.price },
+        shippingOption: { id: shippingOption.id, label: shippingOption.label, price: shippingOption.price },
         paymentMethod,
         couponCode: coupon || undefined,
         guestEmail: !isAuthenticated ? formAddress.email : undefined,
       };
       const { data } = await api.post('/orders/checkout', payload);
       const res = data?.data ?? data;
-      clearCart();
 
       if (paymentMethod === 'paystack' && res?.paymentInitiation?.authorizationUrl) {
+        clearCart();
         window.location.href = res.paymentInitiation.authorizationUrl;
         return;
       }
       if (paymentMethod === 'flutterwave' && res?.paymentInitiation?.paymentLink) {
+        clearCart();
         window.location.href = res.paymentInitiation.paymentLink;
+        return;
+      }
+      if ((paymentMethod === 'paystack' || paymentMethod === 'flutterwave') && res?.paymentError) {
+        // Order was created and stock was reserved, but the gateway call itself
+        // failed (e.g. gateway outage). Don't lose the order — offer an inline
+        // retry instead of pretending checkout succeeded or discarding it.
+        clearCart();
+        setPendingOrder({ orderNumber: res.order?.orderNumber, paymentMethod });
+        setPaymentError(res.paymentError);
         return;
       }
       const emailParam = !isAuthenticated ? formAddress.email : (user as { email?: string })?.email;
       const emailQ = emailParam ? `&email=${encodeURIComponent(emailParam)}` : '';
+      clearCart();
       if (paymentMethod === 'bank_transfer' || paymentMethod === 'cash_on_delivery') {
         router.push(`/order-confirmed?orderNumber=${res?.order?.orderNumber}&pending=1${emailQ}`);
         return;
@@ -126,9 +161,39 @@ export default function CheckoutPage() {
       const msg = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
         : 'Checkout failed';
-      alert(msg);
+      alert(msg || 'Checkout failed');
     } finally {
       setCheckoutLoading(false);
+    }
+  };
+
+  const handleRetryPayment = async () => {
+    if (!pendingOrder) return;
+    setRetryLoading(true);
+    try {
+      const emailParam = !isAuthenticated ? formAddress.email : (user as { email?: string })?.email;
+      const endpoint = pendingOrder.paymentMethod === 'paystack' ? '/payments/paystack/initialize' : '/payments/flutterwave/initialize';
+      const { data } = await api.post(endpoint, {
+        orderNumber: pendingOrder.orderNumber,
+        guestEmail: !isAuthenticated ? emailParam : undefined,
+      });
+      const res = data?.data ?? data;
+      if (res?.authorizationUrl) {
+        window.location.href = res.authorizationUrl;
+        return;
+      }
+      if (res?.paymentLink) {
+        window.location.href = res.paymentLink;
+        return;
+      }
+      setPaymentError('Still unable to start payment. Please try again in a moment.');
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+        : null;
+      setPaymentError(msg || 'Still unable to start payment. Please try again in a moment.');
+    } finally {
+      setRetryLoading(false);
     }
   };
 
@@ -361,26 +426,26 @@ export default function CheckoutPage() {
               <div className="mt-8">
                 <h3 className="font-display font-semibold mb-4">Shipping Options</h3>
                 <div className="space-y-3">
-                  {SHIPPING_OPTIONS.map((opt) => (
+                  {shippingOptions.map((opt) => (
                     <label
-                      key={opt.label}
+                      key={opt.id}
                       className={cn(
                         'block p-4 border rounded-lg cursor-pointer transition-colors',
-                        shippingOption?.label === opt.label ? 'border-primary bg-primary/5' : 'border-border'
+                        shippingOption?.id === opt.id ? 'border-primary bg-primary/5' : 'border-border'
                       )}
                     >
                       <input
                         type="radio"
                         name="shipping"
-                        checked={shippingOption?.label === opt.label}
+                        checked={shippingOption?.id === opt.id}
                         onChange={() => setShippingOption(opt)}
                         className="sr-only"
                       />
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium">{opt.label}</p>
-                          <p className="text-sm text-text-muted">{opt.description}</p>
-                          <p className="text-xs text-text-muted mt-1">{opt.estimatedDays} delivery</p>
+                          {opt.description && <p className="text-sm text-text-muted">{opt.description}</p>}
+                          {opt.estimatedDays && <p className="text-xs text-text-muted mt-1">{opt.estimatedDays} delivery</p>}
                         </div>
                         <span className="font-medium">{opt.price === 0 ? 'Free' : `₦${opt.price.toLocaleString()}`}</span>
                       </div>
@@ -479,6 +544,22 @@ export default function CheckoutPage() {
           {step === 3 && (
             <div>
               <h2 className="font-display font-semibold text-xl mb-6">Payment</h2>
+              {pendingOrder && (
+                <div className="mb-6 p-4 rounded-lg border border-warning/40 bg-warning/10">
+                  <p className="text-sm font-medium text-primary">
+                    Order #{pendingOrder.orderNumber} was created, but we couldn&apos;t start the payment.
+                  </p>
+                  {paymentError && <p className="text-sm text-text-muted mt-1">{paymentError}</p>}
+                  <div className="flex gap-3 mt-3">
+                    <Button variant="accent" size="sm" onClick={handleRetryPayment} loading={retryLoading} disabled={retryLoading}>
+                      Retry Payment
+                    </Button>
+                    <Link href={`/track?orderNumber=${pendingOrder.orderNumber}`} className="text-sm text-accent hover:underline self-center">
+                      Track this order
+                    </Link>
+                  </div>
+                </div>
+              )}
               <div className="space-y-3">
                 {Object.entries(PAYMENT_METHODS).map(([key, opt]) => {
                   if (key === 'cash_on_delivery' && !COD_AVAILABLE) return null;
@@ -494,7 +575,11 @@ export default function CheckoutPage() {
                         type="radio"
                         name="payment"
                         checked={paymentMethod === key}
-                        onChange={() => setPaymentMethod(key)}
+                        onChange={() => {
+                          setPaymentMethod(key);
+                          setPendingOrder(null);
+                          setPaymentError(null);
+                        }}
                         className="mt-1"
                       />
                       <div className="flex-1">
@@ -532,11 +617,17 @@ export default function CheckoutPage() {
                   size="lg"
                   fullWidth
                   className="sm:order-1"
-                  disabled={!paymentMethod || checkoutLoading}
+                  disabled={!paymentMethod || checkoutLoading || !!pendingOrder}
                   loading={checkoutLoading}
                   onClick={handleCheckout}
                 >
-                  {paymentMethod === 'bank_transfer' ? "I've made the transfer" : paymentMethod === 'cash_on_delivery' ? 'Confirm Order' : `Pay ₦${total.toLocaleString()}`}
+                  {pendingOrder
+                    ? 'Use Retry Payment above'
+                    : paymentMethod === 'bank_transfer'
+                    ? "I've made the transfer"
+                    : paymentMethod === 'cash_on_delivery'
+                    ? 'Confirm Order'
+                    : `Pay ₦${total.toLocaleString()}`}
                 </Button>
               </div>
             </div>

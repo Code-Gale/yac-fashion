@@ -219,11 +219,26 @@ const checkout = async (data, userId, cartKey) => {
   }
   const response = { order };
   if (paymentMethod === 'paystack') {
-    const init = await paymentService.initializePaystack(order);
-    response.paymentInitiation = { ...init, publicKey: PAYSTACK_PUBLIC_KEY };
+    // The order (and its reserved stock) must survive even if the gateway
+    // call fails — the customer can retry payment for this exact order via
+    // POST /payments/paystack/initialize using order._id. Never throw here:
+    // that would leave a "phantom" order with decremented stock and no way
+    // for the customer to find it again.
+    try {
+      const init = await paymentService.initializePaystack(order);
+      response.paymentInitiation = { ...init, publicKey: PAYSTACK_PUBLIC_KEY };
+    } catch (err) {
+      console.error(`Paystack initialization failed for order ${order._id}:`, err.message);
+      response.paymentError = 'We could not start your Paystack payment. You can retry from your order confirmation.';
+    }
   } else if (paymentMethod === 'flutterwave') {
-    const init = await paymentService.initializeFlutterwave(order);
-    response.paymentInitiation = { ...init, publicKey: FLUTTERWAVE_PUBLIC_KEY };
+    try {
+      const init = await paymentService.initializeFlutterwave(order);
+      response.paymentInitiation = { ...init, publicKey: FLUTTERWAVE_PUBLIC_KEY };
+    } catch (err) {
+      console.error(`Flutterwave initialization failed for order ${order._id}:`, err.message);
+      response.paymentError = 'We could not start your Flutterwave payment. You can retry from your order confirmation.';
+    }
   } else if (paymentMethod === 'bank_transfer') {
     response.statusLabel = 'Awaiting Payment';
     response.instructions = {
