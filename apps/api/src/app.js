@@ -58,13 +58,33 @@ const allowedOrigins = new Set(
   [normalizeOrigin(CLIENT_URL), ...extraOrigins].filter(Boolean).flatMap(withWwwVariant)
 );
 
+const hostnameWithoutWww = (hostname) => String(hostname || '').replace(/^www\./i, '');
+
+const isAllowedCorsOrigin = (origin) => {
+  const normalized = normalizeOrigin(origin);
+  if (allowedOrigins.has(normalized)) return true;
+  try {
+    const incoming = new URL(normalized);
+    for (const allowed of allowedOrigins) {
+      const ref = new URL(allowed);
+      if (incoming.protocol !== ref.protocol) continue;
+      if (hostnameWithoutWww(incoming.hostname) !== hostnameWithoutWww(ref.hostname)) continue;
+      if ((incoming.port || '') !== (ref.port || '')) continue;
+      return true;
+    }
+  } catch (_) {
+    /* ignore malformed Origin */
+  }
+  return false;
+};
+
 const corsOptions = {
   origin:
     process.env.NODE_ENV === 'development'
       ? true
       : (origin, cb) => {
           if (!origin) return cb(null, true);
-          if (allowedOrigins.has(normalizeOrigin(origin))) return cb(null, true);
+          if (isAllowedCorsOrigin(origin)) return cb(null, true);
           return cb(null, false);
         },
   credentials: true,

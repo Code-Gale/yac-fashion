@@ -1,11 +1,12 @@
 import axios from 'axios';
 import { getSessionId } from './session';
-import { getClientApiBaseUrl } from './api-base';
-
-const baseURL = getClientApiBaseUrl();
+import { getClientApiBaseUrl, getServerApiBaseUrl } from './api-base';
 
 export const api = axios.create({
-  baseURL,
+  baseURL:
+    typeof window === 'undefined'
+      ? getServerApiBaseUrl()
+      : getClientApiBaseUrl(),
   withCredentials: true, // Enable cookies for HttpOnly auth tokens
   headers: { 'Content-Type': 'application/json' },
 });
@@ -18,6 +19,7 @@ export function setAuthStoreForApi(store) {
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
+    config.baseURL = getClientApiBaseUrl();
     // Send Authorization header as fallback (cookies are primary now)
     if (authStore?.getState?.()) {
       const token = authStore.getState().accessToken;
