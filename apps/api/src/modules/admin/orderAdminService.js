@@ -4,6 +4,7 @@ const Coupon = require('../coupons/model');
 const User = require('../users/model');
 const userService = require('../users/service');
 const { sendEmail } = require('../../utils/email');
+const { endOfDayInclusive } = require('../../utils/date');
 const { orderStatusUpdate, paymentReceipt, adminNewOrder } = require('../../utils/emailTemplates');
 const { ADMIN_EMAIL } = require('../../config/env');
 
@@ -36,7 +37,7 @@ const getOrders = async (params) => {
   if (params.from || params.to) {
     query.createdAt = {};
     if (params.from) query.createdAt.$gte = new Date(params.from);
-    if (params.to) query.createdAt.$lte = new Date(params.to);
+    if (params.to) query.createdAt.$lte = endOfDayInclusive(params.to);
   }
   if (params.search && params.search.trim()) {
     const s = params.search.trim();

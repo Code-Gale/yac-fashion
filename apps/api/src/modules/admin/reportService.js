@@ -1,11 +1,12 @@
 const Order = require('../orders/model');
+const { endOfDayInclusive } = require('../../utils/date');
 
 const getSalesReport = async (from, to, groupBy = 'day') => {
   const matchStage = { paymentStatus: 'paid' };
   if (from || to) {
     matchStage.createdAt = {};
     if (from) matchStage.createdAt.$gte = new Date(from);
-    if (to) matchStage.createdAt.$lte = new Date(to);
+    if (to) matchStage.createdAt.$lte = endOfDayInclusive(to);
   }
   const groupField = groupBy === 'day' ? '$dateDay' : groupBy === 'week' ? '$dateWeek' : '$dateMonth';
   const dateProject = {};
