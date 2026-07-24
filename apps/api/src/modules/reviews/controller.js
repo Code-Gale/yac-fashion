@@ -16,7 +16,13 @@ const getByProduct = asyncHandler(async (req, res) => {
   success(res, result);
 });
 
+const getFeatured = asyncHandler(async (req, res) => {
+  const reviews = await reviewService.getFeatured(req.query.limit);
+  success(res, reviews);
+});
+
 module.exports = {
   create,
   getByProduct,
+  getFeatured,
 };

@@ -22,7 +22,10 @@ export function BrandStoryBlock() {
             }}
           />
           <div className="relative z-10 flex flex-col justify-center p-10 lg:p-16 xl:p-24">
-            <p className="text-[#c9a84c] uppercase tracking-[0.2em] text-xs font-medium mb-4">
+            <span className="font-display text-[#c9a84c]/25 text-7xl lg:text-8xl leading-none select-none" aria-hidden>
+              &ldquo;
+            </span>
+            <p className="text-[#c9a84c] uppercase tracking-[0.2em] text-xs font-medium mb-4 -mt-6 lg:-mt-8">
               Our Story
             </p>
             <h2 className="font-display font-semibold text-[2rem] lg:text-[2.75rem] text-white leading-tight">
@@ -34,6 +37,12 @@ export function BrandStoryBlock() {
               embracing global fashion trends. From statement pieces to everyday essentials,
               we deliver luxury that feels accessible.
             </p>
+            <div className="flex items-center gap-3 mt-8">
+              <span className="w-10 h-px bg-[#c9a84c]" />
+              <span className="text-white/60 text-sm italic font-display">
+                Timeless design, modern spirit.
+              </span>
+            </div>
             <div className="flex flex-wrap gap-4 mt-10">
               <Link href="/shop">
                 <Button variant="accent" size="lg" className="min-h-[48px] px-8 rounded-sm">
@@ -58,6 +67,7 @@ export function BrandStoryBlock() {
             priority={false}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0f0f1a] via-transparent to-transparent lg:bg-none" />
+          <div className="absolute inset-5 border border-[#c9a84c]/40 pointer-events-none hidden lg:block" aria-hidden />
         </div>
       </div>
     </section>

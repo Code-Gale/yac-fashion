@@ -41,16 +41,16 @@ export function TrustStrip() {
   ];
 
   return (
-    <section className="border-y border-[#e8e6e1] bg-[#fafaf8] py-6 lg:py-8">
-      <div className="px-6 lg:px-16 xl:px-24">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+    <section className="border-b border-[#e8e6e1] bg-white">
+      <div className="max-w-7xl mx-auto px-6 lg:px-16 xl:px-24">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-[#e8e6e1]">
           {items.map((item, i) => (
-            <div key={i} className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#1a1a2e]/5 flex items-center justify-center text-[#1a1a2e]">
+            <div key={i} className="flex items-center gap-4 py-6 lg:py-8 px-4 lg:px-6">
+              <div className="flex-shrink-0 w-11 h-11 rounded-full bg-[#f5edd6] ring-1 ring-[#c9a84c]/30 flex items-center justify-center text-[#c9a84c]">
                 {item.icon}
               </div>
               <div>
-                <p className="font-semibold text-[#1a1a2e] text-sm lg:text-base">{item.label}</p>
+                <p className="font-display font-semibold text-[#1a1a2e] text-sm lg:text-base">{item.label}</p>
                 <p className="text-[#6b7280] text-xs lg:text-sm mt-0.5">{item.sub}</p>
               </div>
             </div>

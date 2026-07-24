@@ -17,6 +17,9 @@ const accountRoutes = require('./modules/account/routes');
 const paymentRoutes = require('./modules/payments/routes');
 const couponRoutes = require('./modules/coupons/routes');
 const bannerRoutes = require('./modules/banners/routes');
+const reviewPublicRoutes = require('./modules/reviews/publicRoutes');
+const statsRoutes = require('./modules/stats/routes');
+const newsletterRoutes = require('./modules/newsletter/routes');
 const adminRoutes = require('./modules/admin/routes');
 
 const app = express();
@@ -115,6 +118,9 @@ app.use('/api/account', accountRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/banners', bannerRoutes);
+app.use('/api/reviews', reviewPublicRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);

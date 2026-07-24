@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import { HomeHero } from '@/components/home/HomeHero';
+import { AnnouncementMarquee } from '@/components/home/AnnouncementMarquee';
 import { TrustStrip } from '@/components/home/TrustStrip';
+import { StatsBand } from '@/components/home/StatsBand';
 import { CategoriesStrip } from '@/components/home/CategoriesStrip';
 import {
   HomeDeferredFeatured,
@@ -8,6 +10,7 @@ import {
   HomeDeferredNewArrivals,
 } from '@/components/home/HomeDeferredSections';
 import { BrandStoryBlock } from '@/components/home/BrandStoryBlock';
+import { TestimonialsBlock } from '@/components/home/TestimonialsBlock';
 import { NewsletterBlock } from '@/components/home/NewsletterBlock';
 import { fetchApi } from '@/lib/api-client';
 
@@ -39,7 +42,9 @@ export default async function HomePage() {
     <div className="overflow-x-hidden">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }} />
       <HomeHero banners={heroBanners} />
+      <AnnouncementMarquee />
       <TrustStrip />
+      <StatsBand />
       <CategoriesStrip categories={Array.isArray(categories) ? categories : []} />
       <Suspense fallback={null}>
         <HomeDeferredFeatured />
@@ -51,6 +56,7 @@ export default async function HomePage() {
       <Suspense fallback={null}>
         <HomeDeferredNewArrivals />
       </Suspense>
+      <TestimonialsBlock />
       <NewsletterBlock />
     </div>
   );

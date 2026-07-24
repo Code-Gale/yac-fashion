@@ -7,6 +7,7 @@ const CACHE_KEYS = {
   categories: 'cache:categories',
   productsFeatured: 'cache:products:featured',
   productsFlashSale: 'cache:products:flash-sale',
+  statsHomepage: 'cache:stats:homepage',
 };
 
 /**
