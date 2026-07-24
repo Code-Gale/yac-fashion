@@ -68,8 +68,8 @@ export default function AdminOrdersPage() {
     fetchOrders();
   }, [fetchOrders]);
 
-  const customerName = (o: any) => o.userId?.name ?? o.guestEmail ?? '—';
-  const customerEmail = (o: any) => o.userId?.email ?? o.guestEmail ?? '';
+  const customerName = (o: any) => o.userId?.name || o.shippingAddress?.name || (o.guestEmail ? 'Guest' : '—');
+  const customerEmail = (o: any) => o.userId?.email || o.guestEmail || '';
 
   return (
     <div>

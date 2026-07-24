@@ -177,8 +177,13 @@ export default function AdminOrderDetailPage() {
 
           <div className="bg-[#1a1d26] border border-white/10 rounded-xl p-5">
             <h2 className="text-sm font-medium text-[#f0f0f0] mb-4">Customer</h2>
-            <p className="text-[#f0f0f0]">{order.userId?.name ?? order.guestEmail ?? '—'}</p>
-            <p className="text-sm text-[#8b92a5]">{order.userId?.email ?? order.guestEmail ?? ''}</p>
+            <p className="text-[#f0f0f0]">
+              {order.userId?.name || order.shippingAddress?.name || (order.guestEmail ? 'Guest' : '—')}
+            </p>
+            <p className="text-sm text-[#8b92a5]">{order.userId?.email || order.guestEmail || '—'}</p>
+            {order.shippingAddress?.phone && (
+              <p className="text-sm text-[#8b92a5] mt-1">{order.shippingAddress.phone}</p>
+            )}
           </div>
 
           <div className="bg-[#1a1d26] border border-white/10 rounded-xl p-5">
