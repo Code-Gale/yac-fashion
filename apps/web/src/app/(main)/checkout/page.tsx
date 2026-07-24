@@ -61,6 +61,22 @@ export default function CheckoutPage() {
   const total = Math.max(0, subtotal - discount + shippingFee);
   const isAuthenticated = !!accessToken && !!user;
 
+  // Advancing/going back between steps swaps the entire content below the
+  // step indicator, but the browser keeps whatever scroll position the user
+  // was at (e.g. bottom of a long delivery form). Without this, the new
+  // step's content can render entirely off-screen above or below the
+  // viewport, making it look like nothing happened.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
+
+  // Same issue for the payment-error/retry banner: it renders at the top of
+  // the payment step, which the user may have scrolled past to reach the
+  // "Pay now" button.
+  useEffect(() => {
+    if (paymentError) window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [paymentError]);
+
   useEffect(() => {
     if (items.length > 0 && !checkoutTracked.current) {
       checkoutTracked.current = true;
