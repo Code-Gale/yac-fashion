@@ -92,13 +92,17 @@ function AccountShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-bg">
-      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[240px] bg-surface border-r border-border flex-col z-30">
+    <div className="min-h-screen bg-bg lg:flex">
+      {/* `sticky` + `top-[72px]` (== Header's desktop height) keeps this
+          below the sticky Header/AnnouncementBar instead of pinning to the
+          true viewport top, which used to bleed through the Header and
+          overlap the announcement bar above it. */}
+      <aside className="hidden lg:flex lg:sticky lg:top-[72px] lg:h-[calc(100vh-72px)] w-[240px] flex-shrink-0 bg-surface border-r border-border flex-col z-30">
         <div className="p-6 border-b border-border">
-          <div className="w-12 h-12 rounded-full bg-accent text-white flex items-center justify-center font-display font-semibold text-lg">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent to-accent/70 text-white flex items-center justify-center font-display font-semibold text-xl shadow-sm ring-2 ring-accent/20">
             {initials}
           </div>
-          <p className="mt-2 font-display font-semibold text-primary truncate">{user?.name || 'Account'}</p>
+          <p className="mt-3 font-display font-semibold text-primary truncate">{user?.name || 'Account'}</p>
           <p className="text-sm text-text-muted truncate">{user?.email || ''}</p>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -133,7 +137,7 @@ function AccountShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="lg:ml-[240px] pb-20 lg:pb-0 min-h-screen">
+      <main className="flex-1 pb-20 lg:pb-0 min-h-screen min-w-0">
         <div className="p-4 lg:p-8">{children}</div>
       </main>
 
