@@ -10,7 +10,7 @@ import { api } from '@/lib/api';
 function formatCount(n) {
   if (!n || n <= 0) return '0';
   if (n < 20) return String(n);
-    10|  return `${Math.floor(n / 10) * 10}+`;
+      return `${Math.floor(n / 10) * 10}+`;
 }
 
 export function StatsBand() {
@@ -20,7 +20,7 @@ export function StatsBand() {
     api
       .get('/stats/homepage')
       .then(({ data }) => setStats(data?.data ?? data ?? null))
-    20|      .catch(() => setStats(null));
+          .catch(() => setStats(null));
   }, []);
 
   if (!stats) return null;
@@ -31,7 +31,7 @@ export function StatsBand() {
       label: 'Happy Customers',
     },
     stats.productCount > 0 && {
-    30|      value: formatCount(stats.productCount),
+          value: formatCount(stats.productCount),
       label: 'Curated Styles',
     },
     stats.statesCount > 0 && {
@@ -41,7 +41,7 @@ export function StatsBand() {
     stats.reviewCount > 0 && {
       value: stats.avgRating.toFixed(1),
       label: `${formatCount(stats.reviewCount)} Reviews`,
-    40|      suffix: '★',
+          suffix: '★',
     },
   ].filter(Boolean);
 
@@ -55,7 +55,7 @@ export function StatsBand() {
     <section className="border-y border-[#e8e6e1] bg-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-16 xl:px-24">
         <div className={`grid grid-cols-2 ${gridColsClass} divide-x divide-y lg:divide-y-0 divide-[#e8e6e1]`}>
-    50|          {items.map((item, i) => (
+              {items.map((item, i) => (
             <div key={i} className="py-8 lg:py-12 px-4 text-center">
               <p className="font-display font-semibold text-3xl lg:text-4xl text-[#1a1a2e]">
                 {item.value}
@@ -66,7 +66,7 @@ export function StatsBand() {
               </p>
             </div>
           ))}
-    60|        </div>
+            </div>
       </div>
     </section>
   );

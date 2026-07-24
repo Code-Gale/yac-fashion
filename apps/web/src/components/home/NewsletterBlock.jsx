@@ -9,7 +9,7 @@ export function NewsletterBlock() {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
 
-    10|  const handleSubmit = async (e) => {
+      const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim() || status === 'loading') return;
     setStatus('loading');
@@ -19,7 +19,7 @@ export function NewsletterBlock() {
       setStatus('success');
       setEmail('');
     } catch (err) {
-    20|      setStatus('idle');
+          setStatus('idle');
       setError(err?.response?.data?.message || 'Something went wrong. Please try again.');
     }
   };
@@ -29,7 +29,7 @@ export function NewsletterBlock() {
       <div
         className="absolute inset-0 opacity-[0.04]"
         style={{
-    30|          backgroundImage: `repeating-linear-gradient(
+              backgroundImage: `repeating-linear-gradient(
             45deg,
             transparent,
             transparent 50px,
@@ -39,7 +39,7 @@ export function NewsletterBlock() {
         }}
       />
       <div className="relative max-w-2xl mx-auto text-center">
-    40|        <div className="w-14 h-14 rounded-full bg-[#c9a84c]/15 ring-1 ring-[#c9a84c]/40 flex items-center justify-center mx-auto mb-6">
+            <div className="w-14 h-14 rounded-full bg-[#c9a84c]/15 ring-1 ring-[#c9a84c]/40 flex items-center justify-center mx-auto mb-6">
           <svg className="w-6 h-6 text-[#c9a84c]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
@@ -48,7 +48,7 @@ export function NewsletterBlock() {
           Stay in the loop
         </p>
         <h2 className="font-display font-semibold text-[2rem] lg:text-[2.5rem] leading-tight">
-    50|          Join our newsletter
+              Join our newsletter
         </h2>
         <p className="text-white/75 text-base mt-4">
           Be the first to know about new arrivals, exclusive offers, and style inspiration.
@@ -59,7 +59,7 @@ export function NewsletterBlock() {
             <p className="text-white/60 text-sm mt-1">Watch your inbox for our next drop.</p>
           </div>
         ) : (
-    60|          <form onSubmit={handleSubmit} className="mt-10 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <form onSubmit={handleSubmit} className="mt-10 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
             <input
               type="email"
               value={email}
@@ -69,7 +69,7 @@ export function NewsletterBlock() {
               required
             />
             <Button
-    70|              type="submit"
+                  type="submit"
               variant="accent"
               size="lg"
               disabled={status === 'loading'}
@@ -79,7 +79,7 @@ export function NewsletterBlock() {
             </Button>
           </form>
         )}
-    80|        {error && <p className="text-error text-sm mt-3">{error}</p>}
+            {error && <p className="text-error text-sm mt-3">{error}</p>}
         <p className="text-white/40 text-xs mt-6">No spam. Unsubscribe anytime.</p>
       </div>
     </section>

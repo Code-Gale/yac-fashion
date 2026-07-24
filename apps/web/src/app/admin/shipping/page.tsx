@@ -9,7 +9,7 @@ import { NIGERIAN_STATES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 type ShippingMethod = {
-    10|  _id: string;
+      _id: string;
   key: string;
   label: string;
   description?: string;
@@ -20,7 +20,7 @@ type ShippingMethod = {
   rateCount?: number;
 };
 
-    20|type ShippingRate = {
+    type ShippingRate = {
   _id: string;
   method: string;
   state: string;
@@ -30,7 +30,7 @@ type ShippingMethod = {
 
 export default function AdminShippingPage() {
   const { toast } = useToast();
-    30|  const [methods, setMethods] = useState<ShippingMethod[]>([]);
+      const [methods, setMethods] = useState<ShippingMethod[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [methodModalOpen, setMethodModalOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function AdminShippingPage() {
 
   const [ratesModalOpen, setRatesModalOpen] = useState(false);
   const [ratesMethod, setRatesMethod] = useState<ShippingMethod | null>(null);
-    40|  const [rates, setRates] = useState<ShippingRate[]>([]);
+      const [rates, setRates] = useState<ShippingRate[]>([]);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [rateForm, setRateForm] = useState({ state: '', price: '', estimatedDays: '' });
   const [savingRate, setSavingRate] = useState(false);
@@ -50,7 +50,7 @@ export default function AdminShippingPage() {
       const { data } = await api.get('/admin/shipping/methods');
       const list = data?.data ?? data;
       setMethods(Array.isArray(list) ? list : []);
-    50|    } catch (_) {
+        } catch (_) {
       setMethods([]);
     } finally {
       setLoading(false);
@@ -61,7 +61,7 @@ export default function AdminShippingPage() {
     fetchMethods();
   }, [fetchMethods]);
 
-    60|  const openAddMethod = () => {
+      const openAddMethod = () => {
     setEditingMethod(null);
     setMethodForm({ label: '', description: '', estimatedDays: '', price: '', isActive: true });
     setMethodModalOpen(true);
@@ -71,7 +71,7 @@ export default function AdminShippingPage() {
     setEditingMethod(m);
     setMethodForm({
       label: m.label ?? '',
-      70|      description: m.description ?? '',
+            description: m.description ?? '',
       estimatedDays: m.estimatedDays ?? '',
       price: String(m.price ?? ''),
       isActive: m.isActive !== false,
@@ -82,7 +82,7 @@ export default function AdminShippingPage() {
   const saveMethod = async () => {
     if (!methodForm.label.trim()) {
       toast('Label is required', 'error');
-    80|      return;
+          return;
     }
     if (methodForm.price === '' || Number(methodForm.price) < 0) {
       toast('A valid default price is required', 'error');
@@ -93,7 +93,7 @@ export default function AdminShippingPage() {
       const payload = {
         label: methodForm.label.trim(),
         description: methodForm.description.trim(),
-    90|        estimatedDays: methodForm.estimatedDays.trim(),
+            estimatedDays: methodForm.estimatedDays.trim(),
         price: parseFloat(methodForm.price) || 0,
         isActive: methodForm.isActive,
       };
@@ -103,7 +103,7 @@ export default function AdminShippingPage() {
       } else {
         await api.post('/admin/shipping/methods', payload);
         toast('Shipping method created', 'success');
-   100|      }
+         }
       fetchMethods();
       setMethodModalOpen(false);
     } catch (err: any) {
@@ -114,7 +114,7 @@ export default function AdminShippingPage() {
   };
 
   const deleteMethod = async (m: ShippingMethod) => {
-   110|    if (!confirm(`Delete "${m.label}"? This also removes any state-specific pricing for it.`)) return;
+       if (!confirm(`Delete "${m.label}"? This also removes any state-specific pricing for it.`)) return;
     try {
       await api.delete(`/admin/shipping/methods/${m._id}`);
       toast('Deleted', 'success');
@@ -124,7 +124,7 @@ export default function AdminShippingPage() {
     }
   };
 
-   120|  const openRates = async (m: ShippingMethod) => {
+     const openRates = async (m: ShippingMethod) => {
     setRatesMethod(m);
     setRateForm({ state: '', price: '', estimatedDays: '' });
     setRatesModalOpen(true);
@@ -134,7 +134,7 @@ export default function AdminShippingPage() {
       const list = data?.data ?? data;
       setRates(Array.isArray(list) ? list : []);
     } catch (_) {
-   130|      setRates([]);
+         setRates([]);
     } finally {
       setRatesLoading(false);
     }
@@ -145,7 +145,7 @@ export default function AdminShippingPage() {
   };
 
   const saveRate = async () => {
-   140|    if (!ratesMethod) return;
+       if (!ratesMethod) return;
     if (!rateForm.state) {
       toast('Select a state', 'error');
       return;
@@ -156,7 +156,7 @@ export default function AdminShippingPage() {
     }
     setSavingRate(true);
     try {
-   150|      await api.post(`/admin/shipping/methods/${ratesMethod._id}/rates`, {
+         await api.post(`/admin/shipping/methods/${ratesMethod._id}/rates`, {
         state: rateForm.state,
         price: parseFloat(rateForm.price) || 0,
         estimatedDays: rateForm.estimatedDays.trim(),
@@ -166,7 +166,7 @@ export default function AdminShippingPage() {
       const list = data?.data ?? data;
       setRates(Array.isArray(list) ? list : []);
       fetchMethods();
-   160|      setRateForm({ state: '', price: '', estimatedDays: '' });
+         setRateForm({ state: '', price: '', estimatedDays: '' });
     } catch (err: any) {
       toast(err?.response?.data?.message || 'Failed', 'error');
     } finally {
@@ -176,7 +176,7 @@ export default function AdminShippingPage() {
 
   const deleteRate = async (r: ShippingRate) => {
     if (!confirm(`Remove the custom rate for ${r.state}? It will fall back to the default price.`)) return;
-   170|    try {
+       try {
       await api.delete(`/admin/shipping/rates/${r._id}`);
       setRates((prev) => prev.filter((x) => x._id !== r._id));
       toast('Rate removed', 'success');
@@ -187,7 +187,7 @@ export default function AdminShippingPage() {
   };
 
   const statesWithoutRate = NIGERIAN_STATES.filter((s) => !rates.some((r) => r.state === s));
-   180|
+   
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -196,7 +196,7 @@ export default function AdminShippingPage() {
           <p className="text-sm text-[#8b92a5] mt-1">Delivery methods and per-state pricing overrides.</p>
         </div>
         <button type="button" onClick={openAddMethod} className="min-h-[44px] px-4 py-2 bg-[#c9a84c] text-[#0f1117] font-medium rounded-lg hover:bg-[#c9a84c]/90">Add Method</button>
-   190|      </div>
+         </div>
 
       <div className="bg-[#1a1d26] border border-white/10 rounded-xl overflow-hidden">
         <AdminTable
@@ -207,14 +207,14 @@ export default function AdminShippingPage() {
                 {r.estimatedDays && <p className="text-xs text-[#8b92a5]">{r.estimatedDays}</p>}
               </div>
             )},
-   200|            { key: 'price', label: 'Default Price', render: (r: any) => <span className="font-display text-[#c9a84c]">₦{(r.price ?? 0).toLocaleString()}</span> },
+               { key: 'price', label: 'Default Price', render: (r: any) => <span className="font-display text-[#c9a84c]">₦{(r.price ?? 0).toLocaleString()}</span> },
             { key: 'rates', label: 'State Overrides', hideOnMobile: true, render: (r: any) => (
               <button type="button" onClick={() => openRates(r)} className="text-sm text-[#c9a84c] hover:underline">
                 {r.rateCount > 0 ? `${r.rateCount} state${r.rateCount === 1 ? '' : 's'}` : 'Set prices'}
               </button>
             )},
             { key: 'status', label: 'Status', render: (r: any) => <span className={cn('text-xs px-2 py-0.5 rounded-full', r.isActive !== false ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'bg-[#8b92a5]/20 text-[#8b92a5]')}>{r.isActive !== false ? 'Active' : 'Inactive'}</span> },
-   210|            { key: 'actions', label: '', width: '140px', render: (r: any) => (
+               { key: 'actions', label: '', width: '140px', render: (r: any) => (
               <div className="flex gap-2">
                 <button type="button" onClick={() => openEditMethod(r)} className="p-2 rounded hover:bg-white/5 text-[#8b92a5] hover:text-[#f0f0f0]">Edit</button>
                 <button type="button" onClick={() => deleteMethod(r)} className="p-2 rounded hover:bg-[#ef4444]/20 text-[#8b92a5] hover:text-[#ef4444]">Delete</button>
@@ -225,7 +225,7 @@ export default function AdminShippingPage() {
           loading={loading}
           emptyMessage="No shipping methods yet"
         />
-   220|      </div>
+         </div>
 
       {/* Add/Edit method modal */}
       <Modal open={methodModalOpen} onClose={() => setMethodModalOpen(false)} title={editingMethod ? 'Edit Shipping Method' : 'Add Shipping Method'} variant="dark">
@@ -235,7 +235,7 @@ export default function AdminShippingPage() {
             <input type="text" value={methodForm.label} onChange={(e) => setMethodForm((f) => ({ ...f, label: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" placeholder="Standard Delivery" />
           </div>
           <div>
-   230|            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Estimated Days</label>
+               <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Estimated Days</label>
             <input type="text" value={methodForm.estimatedDays} onChange={(e) => setMethodForm((f) => ({ ...f, estimatedDays: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" placeholder="3-5 business days" />
           </div>
           <div>
@@ -244,7 +244,7 @@ export default function AdminShippingPage() {
           </div>
           <div>
             <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Default Price (₦) *</label>
-   240|            <input type="number" min="0" value={methodForm.price} onChange={(e) => setMethodForm((f) => ({ ...f, price: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" placeholder="2500" />
+               <input type="number" min="0" value={methodForm.price} onChange={(e) => setMethodForm((f) => ({ ...f, price: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" placeholder="2500" />
             <p className="text-xs text-[#8b92a5] mt-1">Used for any state without a custom price below.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -252,7 +252,7 @@ export default function AdminShippingPage() {
               <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform', methodForm.isActive ? 'left-7' : 'left-1')} />
             </button>
             <span className="text-sm text-[#f0f0f0]">Active</span>
-   250|          </div>
+             </div>
           <div className="flex gap-3 pt-2 border-t border-[rgba(255,255,255,0.08)]">
             <button type="button" onClick={saveMethod} disabled={savingMethod} className="min-h-[44px] px-4 py-2 bg-[#c9a84c] text-[#0f1117] font-medium rounded-lg disabled:opacity-50">Save</button>
             <button type="button" onClick={() => setMethodModalOpen(false)} className="min-h-[44px] px-4 py-2 border border-[rgba(255,255,255,0.08)] rounded-lg text-[#8b92a5] hover:text-[#f0f0f0]">Cancel</button>
@@ -261,7 +261,7 @@ export default function AdminShippingPage() {
       </Modal>
 
       {/* State pricing modal */}
-   260|      <Modal open={ratesModalOpen} onClose={() => setRatesModalOpen(false)} title={ratesMethod ? `State Pricing — ${ratesMethod.label}` : 'State Pricing'} variant="dark" className="max-w-2xl">
+         <Modal open={ratesModalOpen} onClose={() => setRatesModalOpen(false)} title={ratesMethod ? `State Pricing — ${ratesMethod.label}` : 'State Pricing'} variant="dark" className="max-w-2xl">
         <div className="space-y-6">
           <p className="text-sm text-[#8b92a5]">
             Set a custom price for specific states. Any state without a custom price below uses the default
@@ -270,7 +270,7 @@ export default function AdminShippingPage() {
 
           <div className="grid sm:grid-cols-3 gap-3 items-end p-4 bg-[#0f1117] border border-white/10 rounded-lg">
             <div>
-   270|              <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">State</label>
+                 <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">State</label>
               <select value={rateForm.state} onChange={(e) => setRateForm((f) => ({ ...f, state: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]">
                 <option value="">Select state</option>
                 {[...statesWithoutRate, ...(rates.some((r) => r.state === rateForm.state) ? [rateForm.state] : [])]
@@ -280,7 +280,7 @@ export default function AdminShippingPage() {
             </div>
             <div>
               <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Price (₦)</label>
-   280|              <input type="number" min="0" value={rateForm.price} onChange={(e) => setRateForm((f) => ({ ...f, price: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" placeholder="5000" />
+                 <input type="number" min="0" value={rateForm.price} onChange={(e) => setRateForm((f) => ({ ...f, price: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" placeholder="5000" />
             </div>
             <div>
               <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Days (optional)</label>
@@ -288,7 +288,7 @@ export default function AdminShippingPage() {
             </div>
             <div className="sm:col-span-3">
               <button type="button" onClick={saveRate} disabled={savingRate} className="min-h-[44px] px-4 py-2 bg-[#c9a84c] text-[#0f1117] font-medium rounded-lg disabled:opacity-50 w-full sm:w-auto">
-    290|                {rates.some((r) => r.state === rateForm.state) ? 'Update Price' : 'Add Price'}
+                    {rates.some((r) => r.state === rateForm.state) ? 'Update Price' : 'Add Price'}
               </button>
             </div>
           </div>
@@ -299,7 +299,7 @@ export default function AdminShippingPage() {
                 <div className="animate-spin w-8 h-8 border-2 border-[#c9a84c] border-t-transparent rounded-full" />
               </div>
             ) : rates.length === 0 ? (
-   300|              <p className="text-sm text-[#8b92a5] text-center py-8">No custom state prices yet — every state uses the default.</p>
+                 <p className="text-sm text-[#8b92a5] text-center py-8">No custom state prices yet — every state uses the default.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>
@@ -310,7 +310,7 @@ export default function AdminShippingPage() {
                     <th className="py-2"></th>
                   </tr>
                 </thead>
-   310|                <tbody>
+                   <tbody>
                   {[...rates].sort((a, b) => a.state.localeCompare(b.state)).map((r) => (
                     <tr key={r._id} className="border-b border-white/5">
                       <td className="py-2 pr-4 text-[#f0f0f0]">{r.state}</td>
@@ -320,7 +320,7 @@ export default function AdminShippingPage() {
                         <button type="button" onClick={() => editRate(r)} className="text-[#8b92a5] hover:text-[#f0f0f0]">Edit</button>
                         <button type="button" onClick={() => deleteRate(r)} className="text-[#8b92a5] hover:text-[#ef4444]">Remove</button>
                       </td>
-   320|                    </tr>
+                       </tr>
                   ))}
                 </tbody>
               </table>
