@@ -31,13 +31,31 @@ const normalizeOrigin = (value) => {
   return value.trim().replace(/\/+$/, '');
 };
 
+// A site is almost always reachable at both the bare domain and the
+// "www." subdomain (DNS/nginx usually accept both). If only one variant
+// ends up in CLIENT_URL/ALLOWED_ORIGINS, requests from the other variant
+// would otherwise be silently rejected by CORS — so we always allow both.
+const withWwwVariant = (origin) => {
+  if (!origin) return [];
+  try {
+    const url = new URL(origin);
+    const altHost = url.hostname.startsWith('www.')
+      ? url.hostname.slice(4)
+      : `www.${url.hostname}`;
+    const altOrigin = normalizeOrigin(`${url.protocol}//${altHost}${url.port ? `:${url.port}` : ''}`);
+    return [origin, altOrigin];
+  } catch (_) {
+    return [origin];
+  }
+};
+
 const extraOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(normalizeOrigin)
   .filter(Boolean);
 
 const allowedOrigins = new Set(
-  [normalizeOrigin(CLIENT_URL), ...extraOrigins].filter(Boolean)
+  [normalizeOrigin(CLIENT_URL), ...extraOrigins].filter(Boolean).flatMap(withWwwVariant)
 );
 
 const corsOptions = {
