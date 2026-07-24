@@ -8,6 +8,7 @@ import { useCart } from '@/hooks/useCart';
 import { useAuthStore } from '@/store/auth';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/lib/api';
+import { useToast } from '@/components/ui/ToastContext';
 import { NIGERIAN_STATES, PAYMENT_METHODS, BANK_TRANSFER, COD_AVAILABLE } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { trackBeginCheckout } from '@/lib/analytics';
@@ -34,6 +35,7 @@ type ShippingOption = {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const { items, subtotal, coupon, discount, applyCoupon, removeCoupon, clearCart } = useCart();
   const { accessToken, user } = useAuthStore();
   const [step, setStep] = useState(1);
@@ -52,6 +54,7 @@ export default function CheckoutPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [pendingOrder, setPendingOrder] = useState<{ orderNumber: string; paymentMethod: string } | null>(null);
   const [retryLoading, setRetryLoading] = useState(false);
+  const [step1Attempted, setStep1Attempted] = useState(false);
   const checkoutTracked = useRef(false);
 
   const shippingFee = shippingOption?.price ?? 0;
@@ -98,6 +101,22 @@ export default function CheckoutPage() {
     : selectedAddress
     ? { name: (user as { name?: string })?.name || 'Customer', phone: selectedAddress.phone || '', street: selectedAddress.street || '', city: selectedAddress.city || '', state: selectedAddress.state || '' }
     : null;
+
+  // Exactly what's blocking "Continue" — surfaced to the user instead of a
+  // silently disabled button, since that gave no indication of what to fix.
+  const step1MissingFields: string[] = [];
+  const usingNewAddressForm = useNewAddress || addresses.length === 0;
+  if (!isAuthenticated && !formAddress.email.trim()) step1MissingFields.push('Email');
+  if (usingNewAddressForm) {
+    if (!formAddress.name.trim()) step1MissingFields.push('Full Name');
+    if (!formAddress.phone.trim()) step1MissingFields.push('Phone');
+    if (!formAddress.street.trim()) step1MissingFields.push('Street Address');
+    if (!formAddress.city.trim()) step1MissingFields.push('City');
+    if (!formAddress.state.trim()) step1MissingFields.push('State');
+  } else if (!selectedAddressId) {
+    step1MissingFields.push('Delivery Address');
+  }
+  if (!shippingOption) step1MissingFields.push('Shipping Option');
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim() || couponLoading) return;
@@ -305,12 +324,20 @@ export default function CheckoutPage() {
                   <label className="block text-sm font-medium mb-1">Email</label>
                   <input
                     type="email"
+                    autoComplete="email"
                     value={formAddress.email}
                     onChange={(e) => setFormAddress((f) => ({ ...f, email: e.target.value }))}
                     placeholder="your@email.com"
-                    className="w-full px-4 py-3 border border-border rounded-lg text-base"
+                    className={cn(
+                      'w-full px-4 py-3 border rounded-lg text-base',
+                      step1Attempted && !formAddress.email.trim() ? 'border-error' : 'border-border'
+                    )}
                   />
-                  <p className="text-xs text-text-muted mt-1">We&apos;ll send your order confirmation here</p>
+                  {step1Attempted && !formAddress.email.trim() ? (
+                    <p className="text-xs text-error mt-1">Email is required</p>
+                  ) : (
+                    <p className="text-xs text-text-muted mt-1">We&apos;ll send your order confirmation here</p>
+                  )}
                 </div>
               )}
               {addresses.length > 0 && !useNewAddress && (
@@ -368,51 +395,86 @@ export default function CheckoutPage() {
                     <label className="block text-sm font-medium mb-1">Full Name</label>
                     <input
                       type="text"
+                      autoComplete="name"
                       value={formAddress.name}
                       onChange={(e) => setFormAddress((f) => ({ ...f, name: e.target.value }))}
-                      className="w-full px-4 py-3 border border-border rounded-lg text-base"
+                      className={cn(
+                        'w-full px-4 py-3 border rounded-lg text-base',
+                        step1Attempted && !formAddress.name.trim() ? 'border-error' : 'border-border'
+                      )}
                     />
+                    {step1Attempted && !formAddress.name.trim() && (
+                      <p className="text-xs text-error mt-1">Full name is required</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Phone</label>
                     <input
                       type="tel"
+                      autoComplete="tel"
                       value={formAddress.phone}
                       onChange={(e) => setFormAddress((f) => ({ ...f, phone: e.target.value }))}
-                      className="w-full px-4 py-3 border border-border rounded-lg text-base"
+                      className={cn(
+                        'w-full px-4 py-3 border rounded-lg text-base',
+                        step1Attempted && !formAddress.phone.trim() ? 'border-error' : 'border-border'
+                      )}
                     />
+                    {step1Attempted && !formAddress.phone.trim() && (
+                      <p className="text-xs text-error mt-1">Phone number is required</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Street Address</label>
                     <input
                       type="text"
+                      autoComplete="address-line1"
                       value={formAddress.street}
                       onChange={(e) => setFormAddress((f) => ({ ...f, street: e.target.value }))}
-                      className="w-full px-4 py-3 border border-border rounded-lg text-base"
+                      className={cn(
+                        'w-full px-4 py-3 border rounded-lg text-base',
+                        step1Attempted && !formAddress.street.trim() ? 'border-error' : 'border-border'
+                      )}
                     />
+                    {step1Attempted && !formAddress.street.trim() && (
+                      <p className="text-xs text-error mt-1">Street address is required</p>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1">City</label>
                       <input
                         type="text"
+                        autoComplete="address-level2"
                         value={formAddress.city}
                         onChange={(e) => setFormAddress((f) => ({ ...f, city: e.target.value }))}
-                        className="w-full px-4 py-3 border border-border rounded-lg text-base"
+                        className={cn(
+                          'w-full px-4 py-3 border rounded-lg text-base',
+                          step1Attempted && !formAddress.city.trim() ? 'border-error' : 'border-border'
+                        )}
                       />
+                      {step1Attempted && !formAddress.city.trim() && (
+                        <p className="text-xs text-error mt-1">Required</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">State</label>
                       <select
+                        autoComplete="address-level1"
                         value={formAddress.state}
                         onChange={(e) => setFormAddress((f) => ({ ...f, state: e.target.value }))}
-                        className="w-full px-4 py-3 border border-border rounded-lg text-base"
+                        className={cn(
+                          'w-full px-4 py-3 border rounded-lg text-base',
+                          step1Attempted && !formAddress.state.trim() ? 'border-error' : 'border-border'
+                        )}
                       >
                         <option value="">Select</option>
                         {NIGERIAN_STATES.map((s) => (
                           <option key={s} value={s}>{s}</option>
                         ))}
                       </select>
+                      {step1Attempted && !formAddress.state.trim() && (
+                        <p className="text-xs text-error mt-1">Required</p>
+                      )}
                     </div>
                   </div>
                   {isAuthenticated && (
@@ -425,6 +487,13 @@ export default function CheckoutPage() {
               )}
               <div className="mt-8">
                 <h3 className="font-display font-semibold mb-4">Shipping Options</h3>
+                {shippingOptions.length === 0 ? (
+                  <p className="text-sm text-text-muted">Loading shipping options…</p>
+                ) : (
+                  <>
+                {step1Attempted && !shippingOption && (
+                  <p className="text-sm text-error mb-3">Please select a shipping option</p>
+                )}
                 <div className="space-y-3">
                   {shippingOptions.map((opt) => (
                     <label
@@ -452,15 +521,26 @@ export default function CheckoutPage() {
                     </label>
                   ))}
                 </div>
+                  </>
+                )}
               </div>
-              <div className="mt-8 flex justify-end">
+              <div className="mt-8 flex flex-col items-end gap-2">
+                {step1Attempted && step1MissingFields.length > 0 && (
+                  <p className="text-sm text-error text-right">
+                    Please complete: {step1MissingFields.join(', ')}
+                  </p>
+                )}
                 <Button
                   variant="accent"
                   size="lg"
                   fullWidth
                   className="lg:w-auto"
-                  disabled={!shippingAddress?.name || !shippingAddress?.street || !shippingAddress?.city || !shippingAddress?.state || !shippingAddress?.phone || !shippingOption || (!isAuthenticated && !formAddress.email)}
                   onClick={async () => {
+                    if (step1MissingFields.length > 0) {
+                      setStep1Attempted(true);
+                      toast(`Please complete: ${step1MissingFields.join(', ')}`, 'error');
+                      return;
+                    }
                     if (saveAddress && isAuthenticated && useNewAddress) {
                       try {
                         await api.post('/account/addresses', {
