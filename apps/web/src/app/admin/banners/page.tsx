@@ -138,48 +138,78 @@ export default function AdminBannersPage() {
         </div>
       ) : (
         <div className="bg-[#1a1d26] border border-white/10 rounded-xl overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Image</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Title</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase hidden lg:table-cell">Position</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase hidden lg:table-cell">Date Range</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Status</th>
-                <th className="text-right py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {banners.map((b) => (
-                <tr key={b._id} className="border-b border-white/10 hover:bg-white/5">
-                  <td className="py-3 px-4">
-                    <div className="w-16 h-10 rounded overflow-hidden bg-[#222634] flex-shrink-0">
-                      {b.imageUrl ? <AdminImage src={b.imageUrl} alt="" width={60} height={40} className="w-full h-full object-cover" /> : null}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <p className="font-medium text-[#f0f0f0]">{b.title || '—'}</p>
-                    {b.subtitle && <p className="text-xs text-[#8b92a5]">{b.subtitle}</p>}
-                  </td>
-                  <td className="py-3 px-4 hidden lg:table-cell">
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[#222634] text-[#8b92a5]">{b.position || 'hero'}</span>
-                  </td>
-                  <td className="py-3 px-4 hidden lg:table-cell text-sm text-[#8b92a5]">
-                    {b.startDate ? new Date(b.startDate).toLocaleDateString() : '—'} – {b.endDate ? new Date(b.endDate).toLocaleDateString() : '—'}
-                  </td>
-                  <td className="py-3 px-4">
-                    <button type="button" onClick={() => toggleActive(b)} className={cn('relative w-14 h-8 rounded-full transition-colors min-w-[56px]', b.isActive !== false ? 'bg-[#c9a84c]' : 'bg-[#222634]')}>
-                      <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform', b.isActive !== false ? 'left-7' : 'left-1')} />
-                    </button>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button type="button" onClick={() => openEdit(b)} className="min-h-[44px] px-3 py-2 text-[#c9a84c] hover:bg-[#c9a84c]/20 rounded">Edit</button>
-                    <button type="button" onClick={() => api.delete(`/admin/banners/${b._id}`).then(() => { toast('Deleted'); fetchBanners(); }).catch(() => toast('Failed', 'error'))} className="min-h-[44px] px-3 py-2 text-[#ef4444] hover:bg-[#ef4444]/20 rounded ml-2">Delete</button>
-                  </td>
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Image</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Title</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Position</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Date Range</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Status</th>
+                  <th className="text-right py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {banners.map((b) => (
+                  <tr key={b._id} className="border-b border-white/10 hover:bg-white/5">
+                    <td className="py-3 px-4">
+                      <div className="w-16 h-10 rounded overflow-hidden bg-[#222634] flex-shrink-0">
+                        {b.imageUrl ? <AdminImage src={b.imageUrl} alt="" width={60} height={40} className="w-full h-full object-cover" /> : null}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <p className="font-medium text-[#f0f0f0]">{b.title || '—'}</p>
+                      {b.subtitle && <p className="text-xs text-[#8b92a5]">{b.subtitle}</p>}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#222634] text-[#8b92a5]">{b.position || 'hero'}</span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-[#8b92a5]">
+                      {b.startDate ? new Date(b.startDate).toLocaleDateString() : '—'} – {b.endDate ? new Date(b.endDate).toLocaleDateString() : '—'}
+                    </td>
+                    <td className="py-3 px-4">
+                      <button type="button" onClick={() => toggleActive(b)} className={cn('relative w-14 h-8 rounded-full transition-colors min-w-[56px]', b.isActive !== false ? 'bg-[#c9a84c]' : 'bg-[#222634]')}>
+                        <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform', b.isActive !== false ? 'left-7' : 'left-1')} />
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button type="button" onClick={() => openEdit(b)} className="min-h-[44px] px-3 py-2 text-[#c9a84c] hover:bg-[#c9a84c]/20 rounded">Edit</button>
+                      <button type="button" onClick={() => api.delete(`/admin/banners/${b._id}`).then(() => { toast('Deleted'); fetchBanners(); }).catch(() => toast('Failed', 'error'))} className="min-h-[44px] px-3 py-2 text-[#ef4444] hover:bg-[#ef4444]/20 rounded ml-2">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="lg:hidden divide-y divide-white/10">
+            {banners.map((b) => (
+              <div key={b._id} className="p-4">
+                <div className="flex gap-3">
+                  <div className="w-16 h-10 rounded overflow-hidden bg-[#222634] flex-shrink-0">
+                    {b.imageUrl ? <AdminImage src={b.imageUrl} alt="" width={60} height={40} className="w-full h-full object-cover" /> : null}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[#f0f0f0] truncate">{b.title || '—'}</p>
+                    {b.subtitle && <p className="text-xs text-[#8b92a5] truncate">{b.subtitle}</p>}
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#222634] text-[#8b92a5]">{b.position || 'hero'}</span>
+                      <span className="text-xs text-[#8b92a5]">{b.startDate ? new Date(b.startDate).toLocaleDateString() : '—'} – {b.endDate ? new Date(b.endDate).toLocaleDateString() : '—'}</span>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => toggleActive(b)} className={cn('relative w-14 h-8 rounded-full transition-colors min-w-[56px] flex-shrink-0', b.isActive !== false ? 'bg-[#c9a84c]' : 'bg-[#222634]')}>
+                    <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform', b.isActive !== false ? 'left-7' : 'left-1')} />
+                  </button>
+                </div>
+                <div className="flex gap-2 mt-3 pt-3 border-t border-white/10">
+                  <button type="button" onClick={() => openEdit(b)} className="min-h-[40px] px-3 text-sm text-[#c9a84c] hover:bg-[#c9a84c]/20 rounded">Edit</button>
+                  <button type="button" onClick={() => api.delete(`/admin/banners/${b._id}`).then(() => { toast('Deleted'); fetchBanners(); }).catch(() => toast('Failed', 'error'))} className="min-h-[40px] px-3 text-sm text-[#ef4444] hover:bg-[#ef4444]/20 rounded">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {banners.length === 0 && <div className="py-12 text-center text-[#8b92a5]">No banners</div>}
         </div>
       )}

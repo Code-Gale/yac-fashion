@@ -224,6 +224,27 @@ export default function AdminShippingPage() {
           data={methods}
           loading={loading}
           emptyMessage="No shipping methods yet"
+          mobileCardRender={(r: any) => (
+            <div className="bg-[#222634] rounded-lg p-4 border border-white/10">
+              <div className="flex justify-between items-start gap-3">
+                <div className="min-w-0">
+                  <p className="text-[#f0f0f0] font-medium truncate">{r.label}</p>
+                  {r.estimatedDays && <p className="text-xs text-[#8b92a5]">{r.estimatedDays}</p>}
+                </div>
+                <span className={cn('text-xs px-2 py-0.5 rounded-full flex-shrink-0', r.isActive !== false ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'bg-[#8b92a5]/20 text-[#8b92a5]')}>{r.isActive !== false ? 'Active' : 'Inactive'}</span>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="font-display text-[#c9a84c]">₦{(r.price ?? 0).toLocaleString()}</span>
+                <button type="button" onClick={() => openRates(r)} className="text-sm text-[#c9a84c] hover:underline">
+                  {r.rateCount > 0 ? `${r.rateCount} state${r.rateCount === 1 ? '' : 's'}` : 'Set prices'}
+                </button>
+              </div>
+              <div className="flex gap-2 mt-3 pt-3 border-t border-white/10">
+                <button type="button" onClick={() => openEditMethod(r)} className="min-h-[40px] px-3 rounded hover:bg-white/5 text-[#8b92a5] hover:text-[#f0f0f0] text-sm">Edit</button>
+                <button type="button" onClick={() => deleteMethod(r)} className="min-h-[40px] px-3 rounded hover:bg-[#ef4444]/20 text-[#8b92a5] hover:text-[#ef4444] text-sm">Delete</button>
+              </div>
+            </div>
+          )}
         />
          </div>
 
@@ -301,6 +322,7 @@ export default function AdminShippingPage() {
             ) : rates.length === 0 ? (
                  <p className="text-sm text-[#8b92a5] text-center py-8">No custom state prices yet — every state uses the default.</p>
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-[#8b92a5] uppercase tracking-wider border-b border-white/10">
@@ -324,6 +346,7 @@ export default function AdminShippingPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </div>

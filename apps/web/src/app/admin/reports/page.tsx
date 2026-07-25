@@ -91,20 +91,22 @@ export default function AdminReportsPage() {
     <div>
       <h1 className="font-display text-2xl text-[#f0f0f0] mb-6">Reports</h1>
 
-      <div className="flex flex-col lg:flex-row gap-4 mb-6 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 lg:mx-0 lg:px-0 lg:flex-wrap">
           {PRESETS.map((p) => (
-            <button key={p.label} type="button" onClick={() => applyPreset(p)} className={cn('min-h-[44px] px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap', p.label === 'Custom' ? 'bg-[#1a1d26] border border-white/10 text-[#8b92a5]' : 'bg-[#1a1d26] border border-white/10 text-[#8b92a5] hover:text-[#f0f0f0]')}>{p.label}</button>
+            <button key={p.label} type="button" onClick={() => applyPreset(p)} className={cn('min-h-[44px] px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0', p.label === 'Custom' ? 'bg-[#1a1d26] border border-white/10 text-[#8b92a5]' : 'bg-[#1a1d26] border border-white/10 text-[#8b92a5] hover:text-[#f0f0f0]')}>{p.label}</button>
           ))}
         </div>
-        <div className="flex gap-2 items-center">
-          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0]" />
-          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0]" />
-          {GROUP_BY.map((g) => (
-            <button key={g.value} type="button" onClick={() => setGroupBy(g.value)} className={cn('min-h-[44px] px-4 py-2 rounded-full text-sm font-medium', groupBy === g.value ? 'bg-[#c9a84c] text-[#0f1117]' : 'bg-[#1a1d26] border border-white/10 text-[#8b92a5]')}>{g.label}</button>
-          ))}
+        <div className="flex flex-wrap gap-2 items-center">
+          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0] flex-1 min-w-[140px]" />
+          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0] flex-1 min-w-[140px]" />
+          <div className="flex gap-2 w-full sm:w-auto">
+            {GROUP_BY.map((g) => (
+              <button key={g.value} type="button" onClick={() => setGroupBy(g.value)} className={cn('min-h-[44px] px-4 py-2 rounded-full text-sm font-medium flex-1 sm:flex-initial', groupBy === g.value ? 'bg-[#c9a84c] text-[#0f1117]' : 'bg-[#1a1d26] border border-white/10 text-[#8b92a5]')}>{g.label}</button>
+            ))}
+          </div>
+          <button type="button" onClick={exportCsv} disabled={!data} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0] hover:bg-white/5 w-full sm:w-auto sm:ml-auto">Export CSV</button>
         </div>
-        <button type="button" onClick={exportCsv} disabled={!data} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0] hover:bg-white/5 ml-auto">Export CSV</button>
       </div>
 
       {loading ? (
@@ -158,6 +160,18 @@ export default function AdminReportsPage() {
               ]}
               data={(data?.topProducts ?? []) as any[]}
               emptyMessage="No data"
+              mobileCardRender={(r: any, i?: number) => (
+                <div className="bg-[#222634] rounded-lg p-4 border border-white/10 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-[#8b92a5] text-sm flex-shrink-0">#{(i ?? 0) + 1}</span>
+                    <div className="min-w-0">
+                      <p className="font-medium text-[#f0f0f0] truncate">{r.name}</p>
+                      <p className="text-xs text-[#8b92a5]">{r.unitsSold ?? 0} units sold</p>
+                    </div>
+                  </div>
+                  <span className="font-display text-[#c9a84c] flex-shrink-0">{typeof r.revenue === 'number' ? `₦${r.revenue.toLocaleString()}` : '—'}</span>
+                </div>
+              )}
             />
           </div>
         </>

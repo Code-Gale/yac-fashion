@@ -25,7 +25,7 @@ export function AdminTable<T extends Record<string, unknown> = Record<string, un
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
   keyField?: string;
-  mobileCardRender?: (row: T) => React.ReactNode;
+  mobileCardRender?: (row: T, index?: number) => React.ReactNode;
 }) {
   if (loading) {
     return (
@@ -97,15 +97,27 @@ export function AdminTable<T extends Record<string, unknown> = Record<string, un
           </tbody>
         </table>
       </div>
-      {mobileCardRender && (
-        <div className="lg:hidden space-y-4">
-          {data.map((row) => (
-            <div key={String(row[keyField])}>
-              {mobileCardRender(row)}
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="lg:hidden space-y-4">
+        {data.map((row, i) => (
+          <div key={String(row[keyField])}>
+            {mobileCardRender
+              ? mobileCardRender(row, i)
+              : (
+                <div
+                  onClick={() => onRowClick?.(row)}
+                  className={cn('bg-[#222634] rounded-lg p-4 border border-white/10 space-y-2', onRowClick && 'cursor-pointer active:bg-white/5')}
+                >
+                  {columns.filter((c) => c.label).map((c) => (
+                    <div key={c.key} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-[#8b92a5] flex-shrink-0">{c.label}</span>
+                      <span className="text-right min-w-0">{c.render(row, i)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+          </div>
+        ))}
+      </div>
     </>
   );
 }

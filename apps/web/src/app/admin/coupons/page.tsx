@@ -142,6 +142,28 @@ export default function AdminCouponsPage() {
           data={coupons}
           loading={loading}
           emptyMessage="No coupons"
+          mobileCardRender={(r) => (
+            <div className="bg-[#222634] rounded-lg p-4 border border-white/10">
+              <div className="flex justify-between items-start mb-2">
+                <button type="button" onClick={() => copyCode(r.code)} className="font-mono text-[#c9a84c] hover:underline">{r.code}</button>
+                <span className={cn('text-xs px-2 py-0.5 rounded-full', r.isActive !== false ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'bg-[#8b92a5]/20 text-[#8b92a5]')}>{r.isActive !== false ? 'Active' : 'Inactive'}</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={cn('text-xs px-2 py-0.5 rounded-full', r.type === 'percent' ? 'bg-[#7c3aed]/20 text-[#a78bfa]' : 'bg-[#0891b2]/20 text-[#67e8f9]')}>{r.type}</span>
+                <span className="text-[#f0f0f0] font-medium">{r.type === 'percent' ? `${r.value}%` : `₦${(r.value ?? 0).toLocaleString()}`}</span>
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-16 h-1.5 bg-[rgba(255,255,255,0.1)] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#c9a84c] rounded-full" style={{ width: `${r.usageLimit ? Math.min(100, ((r.usedCount ?? 0) / r.usageLimit) * 100) : 0}%` }} />
+                </div>
+                <span className="text-xs text-[#8b92a5]">{r.usedCount ?? 0}/{r.usageLimit ?? '∞'} used</span>
+              </div>
+              <div className="flex gap-2 pt-2 border-t border-white/10">
+                <button type="button" onClick={() => openEdit(r)} className="min-h-[40px] px-3 rounded hover:bg-white/5 text-[#8b92a5] hover:text-[#f0f0f0] text-sm">Edit</button>
+                <button type="button" onClick={() => api.delete(`/admin/coupons/${r._id}`).then(() => { toast('Deleted'); fetchCoupons(); }).catch(() => toast('Failed', 'error'))} className="min-h-[40px] px-3 rounded hover:bg-[#ef4444]/20 text-[#8b92a5] hover:text-[#ef4444] text-sm">Delete</button>
+              </div>
+            </div>
+          )}
         />
       </div>
 
