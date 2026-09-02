@@ -162,9 +162,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile drawer */}
       {drawerOpen && (
-        <div className="lg:hidden fixed inset-0 z-50" onClick={() => setDrawerOpen(false)}>
-          <div className="admin-drawer-overlay" />
-          <aside className="admin-drawer" onClick={(e) => e.stopPropagation()}>
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div
+            className="admin-drawer-overlay"
+            onClick={() => setDrawerOpen(false)}
+            aria-hidden="true"
+          />
+          <aside className="admin-drawer" role="dialog" aria-modal="true" aria-label="Admin menu">
             <div className="flex items-center justify-between p-4 border-b border-[var(--admin-border)]">
               <span className="font-display text-lg text-[var(--admin-accent)]">YAC Admin</span>
               <button type="button" onClick={() => setDrawerOpen(false)} className="admin-header-back" aria-label="Close menu">
