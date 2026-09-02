@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { trackPurchase } from '@/lib/analytics';
 import { trackPurchase as trackFbPurchase } from '@/lib/fbPixel';
 import { trackCompletePayment } from '@/lib/tiktokPixel';
+import { startPaystackPayment, type PaystackInitPayload } from '@/lib/paystack';
 
 type OrderItem = {
   productId?: string;
@@ -125,12 +126,23 @@ export default function OrderConfirmedPage() {
         guestEmail: emailParam || undefined,
       });
       const res = data?.data ?? data;
-      if (res?.authorizationUrl) {
-        window.location.href = res.authorizationUrl;
+
+      if (paymentMethod === 'paystack') {
+        const result = await startPaystackPayment(
+          res as PaystackInitPayload,
+          (reference) => {
+            window.location.href = `/order-confirmed?orderNumber=${encodeURIComponent(orderNumberParam)}${emailParam ? `&email=${encodeURIComponent(emailParam)}` : ''}&reference=${encodeURIComponent(reference)}`;
+          },
+          () => setRetryError('Payment cancelled. You can try again when ready.'),
+        );
+        if (result === 'failed') {
+          setRetryError('Could not open Paystack. Please try again.');
+        }
         return;
       }
+
       if (res?.paymentLink) {
-        window.location.href = res.paymentLink;
+        window.location.assign(res.paymentLink);
         return;
       }
       setRetryError('Still unable to start payment. Please try again in a moment.');
@@ -221,6 +233,24 @@ export default function OrderConfirmedPage() {
             </p>
             <Button variant="accent" size="lg" fullWidth onClick={handleRetryPayment} loading={retryLoading} disabled={retryLoading} className="mb-6">
               Retry Payment
+            </Button>
+          </>
+        ) : isPendingOrder && isOnlinePayment ? (
+          <>
+            <p className="text-body text-text-muted mb-4">
+              Your order is saved. Complete payment to confirm it.
+            </p>
+            {retryError && <p className="text-sm text-error mb-4">{retryError}</p>}
+            <Button
+              variant="accent"
+              size="lg"
+              fullWidth
+              onClick={handleRetryPayment}
+              loading={retryLoading}
+              disabled={retryLoading}
+              className="mb-6"
+            >
+              {paymentMethod === 'paystack' ? 'Pay with Paystack' : 'Complete Payment'}
             </Button>
           </>
         ) : isCod ? (

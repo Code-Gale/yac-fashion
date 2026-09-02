@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { trackBeginCheckout } from '@/lib/analytics';
 import { trackInitiateCheckout } from '@/lib/fbPixel';
 import { trackInitiateCheckout as trackTikTokInitiateCheckout } from '@/lib/tiktokPixel';
+import { startPaystackPayment, type PaystackInitPayload } from '@/lib/paystack';
 
 type Address = {
   _id: string;
@@ -155,11 +156,54 @@ export default function CheckoutPage() {
     }
   };
 
+  const getCheckoutEmail = () => {
+    if (!isAuthenticated) return formAddress.email.trim();
+    return (user as { email?: string })?.email?.trim() || formAddress.email.trim();
+  };
+
+  const getCheckoutBlocker = (): string | null => {
+    if (items.length === 0) return 'Your cart is empty';
+    if (!paymentMethod) return 'Please select a payment method';
+    if (!shippingOption) return 'Please select a shipping option';
+    if (!shippingAddress?.name || !shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.phone) {
+      return 'Please complete your delivery details on step 1';
+    }
+    if (!getCheckoutEmail()) return 'Email is required for payment confirmation';
+    return null;
+  };
+
+  const redirectAfterPaystack = (orderNumber: string, reference?: string) => {
+    const email = getCheckoutEmail();
+    const emailQ = email ? `&email=${encodeURIComponent(email)}` : '';
+    const refQ = reference ? `&reference=${encodeURIComponent(reference)}` : '';
+    clearCart();
+    router.push(`/order-confirmed?orderNumber=${orderNumber}${emailQ}${refQ}`);
+  };
+
+  const launchPaystack = async (init: PaystackInitPayload, orderNumber: string) => {
+    const result = await startPaystackPayment(
+      init,
+      (reference) => redirectAfterPaystack(orderNumber, reference),
+      () => {
+        toast('Payment cancelled. Your order is saved — you can complete payment from order confirmation.', 'error');
+        redirectAfterPaystack(orderNumber);
+      },
+    );
+
+    if (result === 'failed') {
+      setPendingOrder({ orderNumber, paymentMethod: 'paystack' });
+      setPaymentError('Could not open Paystack. Tap Retry Payment to try again.');
+    }
+  };
+
   const handleCheckout = async () => {
-    if (!shippingAddress?.name || !shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.phone) return;
-    if (!shippingOption || !paymentMethod) return;
-    if (items.length === 0) return;
-    if (!isAuthenticated && !formAddress.email) return;
+    const blocker = getCheckoutBlocker();
+    if (blocker) {
+      toast(blocker, 'error');
+      if (blocker.includes('delivery')) setStep(1);
+      return;
+    }
+    if (!shippingAddress || !shippingOption || !paymentMethod) return;
 
     setCheckoutLoading(true);
     setPaymentError(null);
@@ -174,22 +218,19 @@ export default function CheckoutPage() {
       };
       const { data } = await api.post('/orders/checkout', payload);
       const res = data?.data ?? data;
+      const orderNumber = res?.order?.orderNumber as string | undefined;
 
-      if (paymentMethod === 'paystack' && res?.paymentInitiation?.authorizationUrl) {
-        clearCart();
-        window.location.href = res.paymentInitiation.authorizationUrl;
+      if (paymentMethod === 'paystack' && res?.paymentInitiation && orderNumber) {
+        await launchPaystack(res.paymentInitiation as PaystackInitPayload, orderNumber);
         return;
       }
-      if (paymentMethod === 'paystack' && res?.paymentError) {
-        // Order was created and stock was reserved, but the gateway call itself
-        // failed (e.g. gateway outage). Don't lose the order — offer an inline
-        // retry instead of pretending checkout succeeded or discarding it.
+      if (paymentMethod === 'paystack' && orderNumber) {
         clearCart();
-        setPendingOrder({ orderNumber: res.order?.orderNumber, paymentMethod });
-        setPaymentError(res.paymentError);
+        setPendingOrder({ orderNumber: res.order.orderNumber, paymentMethod });
+        setPaymentError(res?.paymentError || 'Could not start Paystack payment. Use Pay with Paystack below to retry.');
         return;
       }
-      const emailParam = !isAuthenticated ? formAddress.email : (user as { email?: string })?.email;
+      const emailParam = getCheckoutEmail();
       const emailQ = emailParam ? `&email=${encodeURIComponent(emailParam)}` : '';
       clearCart();
       if (paymentMethod === 'bank_transfer' || paymentMethod === 'cash_on_delivery') {
@@ -201,7 +242,7 @@ export default function CheckoutPage() {
       const msg = err && typeof err === 'object' && 'response' in err
         ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
         : 'Checkout failed';
-      alert(msg || 'Checkout failed');
+      toast(msg || 'Checkout failed', 'error');
     } finally {
       setCheckoutLoading(false);
     }
@@ -210,19 +251,20 @@ export default function CheckoutPage() {
   const handleRetryPayment = async () => {
     if (!pendingOrder) return;
     setRetryLoading(true);
+    setPaymentError(null);
     try {
-      const emailParam = !isAuthenticated ? formAddress.email : (user as { email?: string })?.email;
+      const emailParam = getCheckoutEmail();
       const { data } = await api.post('/payments/paystack/initialize', {
         orderNumber: pendingOrder.orderNumber,
         guestEmail: !isAuthenticated ? emailParam : undefined,
       });
       const res = data?.data ?? data;
-      if (res?.authorizationUrl) {
-        window.location.href = res.authorizationUrl;
+      if (pendingOrder.paymentMethod === 'paystack') {
+        await launchPaystack(res as PaystackInitPayload, pendingOrder.orderNumber);
         return;
       }
       if (res?.paymentLink) {
-        window.location.href = res.paymentLink;
+        window.location.assign(res.paymentLink);
         return;
       }
       setPaymentError('Still unable to start payment. Please try again in a moment.');
@@ -655,7 +697,7 @@ export default function CheckoutPage() {
                   {paymentError && <p className="text-sm text-text-muted mt-1">{paymentError}</p>}
                   <div className="flex gap-3 mt-3">
                     <Button variant="accent" size="sm" onClick={handleRetryPayment} loading={retryLoading} disabled={retryLoading}>
-                      Retry Payment
+                      {pendingOrder.paymentMethod === 'paystack' ? 'Pay with Paystack' : 'Retry Payment'}
                     </Button>
                     <Link href={`/track?orderNumber=${pendingOrder.orderNumber}`} className="text-sm text-accent hover:underline self-center">
                       Track this order
@@ -720,17 +762,21 @@ export default function CheckoutPage() {
                   size="lg"
                   fullWidth
                   className="sm:order-1"
-                  disabled={!paymentMethod || checkoutLoading || !!pendingOrder}
+                  disabled={checkoutLoading || retryLoading || !!pendingOrder}
                   loading={checkoutLoading}
                   onClick={handleCheckout}
                 >
                   {pendingOrder
-                    ? 'Use Retry Payment above'
+                    ? 'Complete payment above'
+                    : paymentMethod === 'paystack'
+                    ? `Pay with Paystack · ₦${total.toLocaleString()}`
                     : paymentMethod === 'bank_transfer'
                     ? "I've made the transfer"
                     : paymentMethod === 'cash_on_delivery'
                     ? 'Confirm Order'
-                    : `Pay ₦${total.toLocaleString()}`}
+                    : paymentMethod
+                    ? `Pay ₦${total.toLocaleString()}`
+                    : 'Select a payment method'}
                 </Button>
               </div>
             </div>

@@ -87,6 +87,18 @@ const initializePaystack = async (order) => {
   };
 };
 
+/** Fields the web client needs to open Paystack inline or redirect. */
+const buildPaystackClientPayload = async (order, init) => {
+  const email = order.guestEmail || (await getOrderCustomerEmail(order));
+  const { PAYSTACK_PUBLIC_KEY } = require('../../config/env');
+  return {
+    ...init,
+    publicKey: PAYSTACK_PUBLIC_KEY || undefined,
+    email: email || undefined,
+    amount: Math.round(order.total * 100),
+  };
+};
+
 const verifyPaystack = async (reference) => {
   if (!PAYSTACK_SECRET_KEY) {
     const err = new Error('Paystack is not configured');
@@ -242,6 +254,7 @@ module.exports = {
   initializePaystack,
   verifyPaystack,
   confirmPaystackPayment,
+  buildPaystackClientPayload,
   initializeFlutterwave,
   verifyFlutterwave,
   confirmFlutterwavePayment,

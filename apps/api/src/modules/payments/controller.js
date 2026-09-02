@@ -38,7 +38,8 @@ const initiatePaystack = asyncHandler(async (req, res) => {
     return error(res, 'Order already paid', 400);
   }
   const result = await paymentService.initializePaystack(order);
-  success(res, result);
+  const payload = await paymentService.buildPaystackClientPayload(order, result);
+  success(res, payload);
 });
 
 const initiateFlutterwave = asyncHandler(async (req, res) => {

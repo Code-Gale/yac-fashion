@@ -6,7 +6,7 @@ const paymentService = require('../payments/service');
 const { resolveShippingOption } = require('../shipping/service');
 const { sendEmail } = require('../../utils/email');
 const { orderConfirmation } = require('../../utils/emailTemplates');
-const { PAYSTACK_PUBLIC_KEY, FLUTTERWAVE_PUBLIC_KEY, CLIENT_URL } = require('../../config/env');
+const { FLUTTERWAVE_PUBLIC_KEY } = require('../../config/env');
 
 const generateOrderNumber = () => {
   const date = new Date();
@@ -225,7 +225,7 @@ const checkout = async (data, userId, cartKey) => {
     // for the customer to find it again.
     try {
       const init = await paymentService.initializePaystack(order);
-      response.paymentInitiation = { ...init, publicKey: PAYSTACK_PUBLIC_KEY };
+      response.paymentInitiation = await paymentService.buildPaystackClientPayload(order, init);
     } catch (err) {
       console.error(`Paystack initialization failed for order ${order._id}:`, err.message);
       response.paymentError = 'We could not start your Paystack payment. You can retry from your order confirmation.';
