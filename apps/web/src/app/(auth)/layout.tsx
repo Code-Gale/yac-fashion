@@ -6,7 +6,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-x-clip w-full max-w-full">
       <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12">
         <p className="font-display text-2xl lg:text-3xl text-accent text-center max-w-md">
           "Style is a way to say who you are without having to speak."

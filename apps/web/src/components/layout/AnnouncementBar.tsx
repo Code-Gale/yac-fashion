@@ -23,11 +23,16 @@ export function AnnouncementBar() {
 
   return (
     <div className="relative bg-primary text-white text-xs text-center py-2 overflow-hidden">
-      <div className="lg:hidden animate-marquee whitespace-nowrap">
-        <span className="inline-block pr-8">{MARQUEE_TEXT}</span>
-        <span className="inline-block pr-8">{MARQUEE_TEXT}</span>
+      <div className="lg:hidden overflow-hidden">
+        <div className="flex w-max animate-marquee">
+          {[0, 1].map((dupe) => (
+            <span key={dupe} className="inline-flex shrink-0 px-8 whitespace-nowrap">
+              {MARQUEE_TEXT}
+            </span>
+          ))}
+        </div>
       </div>
-      <div className="hidden lg:block">{MARQUEE_TEXT}</div>
+      <div className="hidden lg:block px-10">{MARQUEE_TEXT}</div>
       <button
         type="button"
         onClick={handleClose}

@@ -42,6 +42,9 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 body {
@@ -49,6 +52,10 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100%;
+  position: relative;
 }
 
 * {
@@ -173,6 +180,8 @@ body {
 
 .home-section {
   padding-block: clamp(64px, 10vw, 120px);
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 [data-admin] {

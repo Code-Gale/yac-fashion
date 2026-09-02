@@ -65,7 +65,7 @@ export function HomeHero({ banners }) {
             fill
             priority
             sizes="100vw"
-            className="object-cover scale-105"
+            className="object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f1a]/95 via-[#0f0f1a]/40 to-transparent" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(201,168,76,0.08),transparent)]" />

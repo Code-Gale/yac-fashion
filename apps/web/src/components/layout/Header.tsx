@@ -125,7 +125,7 @@ export function Header() {
     <>
       <header
         className={cn(
-          'sticky top-0 z-40 transition-all duration-300',
+          'sticky top-0 z-40 transition-all duration-300 w-full max-w-full overflow-x-clip',
           'lg:h-[72px] h-14',
           scrolled && 'bg-surface/95 backdrop-blur-md border-b border-border'
         )}

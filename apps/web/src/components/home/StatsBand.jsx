@@ -52,10 +52,10 @@ export function StatsBand() {
   const gridColsClass = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }[items.length];
 
   return (
-    <section className="border-y border-[#e8e6e1] bg-white">
-      <div className="max-w-7xl mx-auto">
+    <section className="border-y border-[#e8e6e1] bg-white overflow-x-clip max-w-full">
+      <div className="max-w-7xl mx-auto overflow-x-clip">
         <div
-          className={`flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide px-6 py-6 lg:px-16 xl:px-24 lg:py-0 lg:grid grid-cols-2 ${gridColsClass} lg:gap-0 lg:divide-x lg:divide-[#e8e6e1] lg:overflow-visible`}
+          className={`flex gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-hide px-6 py-6 lg:px-16 xl:px-24 lg:py-0 lg:grid grid-cols-2 ${gridColsClass} lg:gap-0 lg:divide-x lg:divide-[#e8e6e1] lg:overflow-visible max-w-full`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {items.map((item, i) => (

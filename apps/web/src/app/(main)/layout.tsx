@@ -10,10 +10,10 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-clip w-full max-w-full">
       <AnnouncementBar />
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 min-w-0 w-full overflow-x-clip">{children}</main>
       <Footer />
     </div>
   );
