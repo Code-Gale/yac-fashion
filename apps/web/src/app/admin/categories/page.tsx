@@ -91,8 +91,10 @@ export default function AdminCategoriesPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/admin/categories/${id}`);
-      toast('Category deleted', 'success');
+      const { data } = await api.delete(`/admin/categories/${id}`);
+      const message = data?.data?.message ?? data?.message ?? 'Category deleted';
+      toast(message, 'success');
+      setCategories((prev) => prev.filter((c) => c._id !== id));
       fetchCategories();
     } catch (err: any) {
       toast(err?.response?.data?.message || 'Failed', 'error');

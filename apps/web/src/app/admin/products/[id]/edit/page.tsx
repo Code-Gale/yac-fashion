@@ -5,10 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/ToastContext';
+import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/utils';
 import {
   AdminPageHeader, AdminCard, AdminField, AdminInput, AdminSelect,
-  AdminTextarea, AdminButton, AdminStickyBar, AdminToggle, AdminLoading,
+  AdminTextarea, AdminButton, AdminStickyBar, AdminToggle, AdminLoading, AdminModalActions,
 } from '@/components/admin/ui';
 
 function slugify(s: string) {
@@ -38,6 +39,8 @@ export default function EditProductPage() {
   const [tagInput, setTagInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
@@ -135,6 +138,20 @@ export default function EditProductPage() {
     }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/admin/products/${id}`);
+      toast('Product deleted', 'success');
+      router.push('/admin/products');
+    } catch (err: any) {
+      toast(err?.response?.data?.message || 'Failed to delete product', 'error');
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
+    }
+  };
+
   const slugPreview = slugify(form.name) || 'product-slug';
 
   if (loading) return <AdminLoading />;
@@ -226,12 +243,32 @@ export default function EditProductPage() {
         </div>
 
         <AdminStickyBar>
-          <AdminButton type="submit" disabled={saving} fullWidth>{saving ? 'Saving...' : 'Save Product'}</AdminButton>
+          <div className="flex gap-2 w-full">
+            <AdminButton type="submit" disabled={saving} fullWidth className="flex-1">
+              {saving ? 'Saving...' : 'Save Product'}
+            </AdminButton>
+            <AdminButton type="button" variant="danger" onClick={() => setDeleteOpen(true)} className="!min-h-[48px] !px-4">
+              Delete
+            </AdminButton>
+          </div>
         </AdminStickyBar>
-        <div className="hidden lg:flex justify-end">
+        <div className="hidden lg:flex justify-end gap-3">
+          <AdminButton type="button" variant="danger" onClick={() => setDeleteOpen(true)}>Delete Product</AdminButton>
           <AdminButton type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save Product'}</AdminButton>
         </div>
       </form>
+
+      <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Product" variant="dark">
+        <p className="text-[var(--admin-text-muted)] mb-4">
+          Delete <span className="font-semibold text-[var(--admin-text)]">{form.name || 'this product'}</span>? This cannot be undone.
+        </p>
+        <AdminModalActions>
+          <AdminButton variant="danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Delete'}
+          </AdminButton>
+          <AdminButton variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</AdminButton>
+        </AdminModalActions>
+      </Modal>
     </div>
   );
 }

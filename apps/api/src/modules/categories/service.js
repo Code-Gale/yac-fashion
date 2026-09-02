@@ -37,8 +37,25 @@ const softDelete = async (id) => {
   return doc;
 };
 
+const remove = async (id) => {
+  const category = await Category.findById(id);
+  if (!category) return null;
+
+  const productCount = await Product.countDocuments({ category: id });
+
+  if (productCount === 0) {
+    await Category.findByIdAndDelete(id);
+    await invalidateCacheKeys([CACHE_KEYS.categories]);
+    return { category, hardDeleted: true };
+  }
+
+  const doc = await Category.findByIdAndUpdate(id, { isActive: false }, { new: true, runValidators: true });
+  await invalidateCacheKeys([CACHE_KEYS.categories]);
+  return { category: doc, hardDeleted: false, productCount };
+};
+
 const findAllForAdmin = async () => {
-  const categories = await Category.find().sort({ name: 1 }).lean();
+  const categories = await Category.find({ isActive: true }).sort({ name: 1 }).lean();
   const counts = await Product.aggregate([
     { $match: { isActive: true } },
     { $group: { _id: '$category', count: { $sum: 1 } } },
@@ -58,6 +75,7 @@ module.exports = {
   create,
   update,
   softDelete,
+  remove,
   findAllForAdmin,
   findById,
 };

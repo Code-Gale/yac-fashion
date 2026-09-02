@@ -29,11 +29,17 @@ const update = asyncHandler(async (req, res) => {
 });
 
 const remove = asyncHandler(async (req, res) => {
-  const category = await categoryService.softDelete(req.params.id);
-  if (!category) {
+  const result = await categoryService.remove(req.params.id);
+  if (!result) {
     return error(res, 'Category not found', 404);
   }
-  success(res, { message: 'Category deactivated' });
+  if (result.hardDeleted) {
+    return success(res, { message: 'Category deleted' });
+  }
+  success(res, {
+    message: `Category hidden (${result.productCount} linked product${result.productCount === 1 ? '' : 's'} remain)`,
+    deactivated: true,
+  });
 });
 
 const getAllForAdmin = asyncHandler(async (req, res) => {
