@@ -20,7 +20,7 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('active');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkModal, setBulkModal] = useState<'delete' | null>(null);
@@ -58,14 +58,16 @@ export default function AdminProductsPage() {
   const deleteProduct = async (id: string) => {
     setDeleteLoading(true);
     try {
-      await api.delete(`/admin/products/${id}`);
-      toast('Product deleted', 'success');
+      const { data } = await api.delete(`/admin/products/${id}`);
+      const message = data?.data?.message ?? data?.message ?? 'Product deleted';
+      toast(message, 'success');
       setDeleteTarget(null);
       setSelected((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
+      setProducts((prev) => prev.filter((p) => p._id !== id));
       fetchProducts();
     } catch (err: any) {
       toast(err?.response?.data?.message || 'Failed to delete product', 'error');
@@ -151,9 +153,9 @@ export default function AdminProductsPage() {
             {categories.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
           </AdminSelect>
           <AdminSelect value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
-            <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="draft">Draft</option>
+            <option value="all">All Status</option>
           </AdminSelect>
         </div>
       </div>

@@ -53,11 +53,11 @@ const update = asyncHandler(async (req, res) => {
 });
 
 const remove = asyncHandler(async (req, res) => {
-  const product = await productService.softDelete(req.params.id);
+  const product = await productService.remove(req.params.id);
   if (!product) {
     return error(res, 'Product not found', 404);
   }
-  success(res, { message: 'Product deactivated' });
+  success(res, { message: 'Product deleted' });
 });
 
 const updateStock = asyncHandler(async (req, res) => {

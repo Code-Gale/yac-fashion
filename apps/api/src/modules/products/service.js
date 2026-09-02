@@ -1,5 +1,7 @@
 const Product = require('./model');
 const Category = require('../categories/model');
+const Review = require('../reviews/model');
+const User = require('../users/model');
 const { deleteFromMinio } = require('../../utils/upload');
 const { getCached, invalidateCacheKeys, CACHE_KEYS } = require('../../utils/cache');
 
@@ -113,6 +115,21 @@ const softDelete = async (id) => {
   return result;
 };
 
+const remove = async (id) => {
+  const product = await Product.findById(id);
+  if (!product) return null;
+
+  if (product.images?.length) {
+    await Promise.all(product.images.map((url) => deleteFromMinio(url)));
+  }
+
+  await Review.deleteMany({ productId: id });
+  await User.updateMany({ wishlist: id }, { $pull: { wishlist: id } });
+  await Product.findByIdAndDelete(id);
+  await invalidateProductPublicCaches();
+  return product;
+};
+
 const updateStock = async (id, stock) => {
   const updated = await Product.findByIdAndUpdate(
     id,
@@ -139,8 +156,9 @@ const findAllForAdmin = async (params) => {
     ];
   }
   if (params.category) query.category = params.category;
-  if (params.status === 'active') query.isActive = true;
   if (params.status === 'draft') query.isActive = false;
+  else if (params.status === 'all') { /* include active + inactive */ }
+  else query.isActive = true;
   const [products, total] = await Promise.all([
     Product.find(query).populate('category', 'name slug').sort({ createdAt: -1 }).skip(skip).limit(limit),
     Product.countDocuments(query),
@@ -206,6 +224,7 @@ module.exports = {
   create,
   update,
   softDelete,
+  remove,
   updateStock,
   findById,
   findRelated,
