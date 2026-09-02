@@ -1,11 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AdminImage } from '@/components/admin/AdminImage';
+import Image from 'next/image';
 import { api } from '@/lib/api';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastContext';
-import { cn } from '@/lib/utils';
+import {
+  AdminPageHeader, AdminButton, AdminPanel, AdminField, AdminInput, AdminSelect,
+  AdminBadge, AdminFab, AdminModalActions, AdminToggle, AdminLoading,
+} from '@/components/admin/ui';
+import { AdminMobileCard } from '@/components/admin/AdminTable';
 
 const POSITIONS = [
   { value: 'hero', label: 'Hero' },
@@ -125,146 +129,139 @@ export default function AdminBannersPage() {
     }
   };
 
+  const handleDelete = (id: string) => {
+    api.delete(`/admin/banners/${id}`).then(() => { toast('Deleted'); fetchBanners(); }).catch(() => toast('Failed', 'error'));
+  };
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl text-[#f0f0f0]">Banners</h1>
-        <button type="button" onClick={openAdd} className="min-h-[44px] px-4 py-2 bg-[#c9a84c] text-[#0f1117] font-medium rounded-lg hover:bg-[#c9a84c]/90">Add Banner</button>
-      </div>
+      <AdminPageHeader
+        title="Banners"
+        action={<AdminButton onClick={openAdd} className="hidden lg:inline-flex">Add Banner</AdminButton>}
+      />
 
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => <div key={i} className="bg-[#1a1d26] border border-white/10 rounded-xl p-4 h-24 animate-pulse" />)}
-        </div>
+        <AdminLoading />
+      ) : banners.length === 0 ? (
+        <AdminPanel>
+          <div className="py-14 px-4 text-center">
+            <p className="text-[var(--admin-text-muted)] text-sm">No banners</p>
+          </div>
+        </AdminPanel>
       ) : (
-        <div className="bg-[#1a1d26] border border-white/10 rounded-xl overflow-hidden">
-          <div className="hidden lg:block overflow-x-auto">
+        <>
+          <div className="lg:hidden space-y-3">
+            {banners.map((b, i) => (
+              <AdminMobileCard key={b._id} index={i}>
+                <div className="flex gap-3">
+                  <div className="w-16 h-10 rounded-lg overflow-hidden bg-[var(--admin-surface-3)] flex-shrink-0">
+                    {b.imageUrl ? <Image src={b.imageUrl} alt="" width={64} height={40} className="w-full h-full object-cover" /> : null}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">{b.title || '—'}</p>
+                    {b.subtitle && <p className="text-xs text-[var(--admin-text-muted)] truncate">{b.subtitle}</p>}
+                    <div className="flex items-center gap-2 mt-2">
+                      <AdminBadge tone="muted">{b.position || 'hero'}</AdminBadge>
+                      <AdminBadge tone={b.isActive !== false ? 'success' : 'muted'}>{b.isActive !== false ? 'Active' : 'Inactive'}</AdminBadge>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--admin-border)]">
+                  <AdminToggle checked={b.isActive !== false} onChange={() => toggleActive(b)} label="Active" />
+                  <div className="flex gap-1">
+                    <AdminButton variant="ghost" onClick={() => openEdit(b)} className="!min-h-[36px] !px-2">Edit</AdminButton>
+                    <AdminButton variant="ghost" onClick={() => handleDelete(b._id)} className="!min-h-[36px] !px-2 hover:!text-[var(--admin-error)]">Delete</AdminButton>
+                  </div>
+                </div>
+              </AdminMobileCard>
+            ))}
+          </div>
+
+          <AdminPanel className="hidden lg:block">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Image</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Title</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Position</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Date Range</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Status</th>
-                  <th className="text-right py-3 px-4 text-xs font-medium text-[#8b92a5] uppercase">Actions</th>
+                <tr className="border-b border-[var(--admin-border)]">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-[var(--admin-text-muted)] uppercase tracking-wider">Image</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-[var(--admin-text-muted)] uppercase tracking-wider">Title</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-[var(--admin-text-muted)] uppercase tracking-wider">Position</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-[var(--admin-text-muted)] uppercase tracking-wider">Date Range</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-[var(--admin-text-muted)] uppercase tracking-wider">Status</th>
+                  <th className="text-right py-3 px-4 text-xs font-semibold text-[var(--admin-text-muted)] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {banners.map((b) => (
-                  <tr key={b._id} className="border-b border-white/10 hover:bg-white/5">
+                  <tr key={b._id} className="border-b border-[var(--admin-border)] hover:bg-white/[0.03]">
                     <td className="py-3 px-4">
-                      <div className="w-16 h-10 rounded overflow-hidden bg-[#222634] flex-shrink-0">
-                        {b.imageUrl ? <AdminImage src={b.imageUrl} alt="" width={60} height={40} className="w-full h-full object-cover" /> : null}
+                      <div className="w-16 h-10 rounded overflow-hidden bg-[var(--admin-surface-3)] flex-shrink-0">
+                        {b.imageUrl ? <Image src={b.imageUrl} alt="" width={60} height={40} className="w-full h-full object-cover" /> : null}
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <p className="font-medium text-[#f0f0f0]">{b.title || '—'}</p>
-                      {b.subtitle && <p className="text-xs text-[#8b92a5]">{b.subtitle}</p>}
+                      <p className="font-medium">{b.title || '—'}</p>
+                      {b.subtitle && <p className="text-xs text-[var(--admin-text-muted)]">{b.subtitle}</p>}
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#222634] text-[#8b92a5]">{b.position || 'hero'}</span>
+                      <AdminBadge tone="muted">{b.position || 'hero'}</AdminBadge>
                     </td>
-                    <td className="py-3 px-4 text-sm text-[#8b92a5]">
+                    <td className="py-3 px-4 text-sm text-[var(--admin-text-muted)]">
                       {b.startDate ? new Date(b.startDate).toLocaleDateString() : '—'} – {b.endDate ? new Date(b.endDate).toLocaleDateString() : '—'}
                     </td>
                     <td className="py-3 px-4">
-                      <button type="button" onClick={() => toggleActive(b)} className={cn('relative w-14 h-8 rounded-full transition-colors min-w-[56px]', b.isActive !== false ? 'bg-[#c9a84c]' : 'bg-[#222634]')}>
-                        <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform', b.isActive !== false ? 'left-7' : 'left-1')} />
-                      </button>
+                      <AdminToggle checked={b.isActive !== false} onChange={() => toggleActive(b)} />
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <button type="button" onClick={() => openEdit(b)} className="min-h-[44px] px-3 py-2 text-[#c9a84c] hover:bg-[#c9a84c]/20 rounded">Edit</button>
-                      <button type="button" onClick={() => api.delete(`/admin/banners/${b._id}`).then(() => { toast('Deleted'); fetchBanners(); }).catch(() => toast('Failed', 'error'))} className="min-h-[44px] px-3 py-2 text-[#ef4444] hover:bg-[#ef4444]/20 rounded ml-2">Delete</button>
+                      <AdminButton variant="ghost" onClick={() => openEdit(b)} className="!min-h-[36px] !px-2">Edit</AdminButton>
+                      <AdminButton variant="ghost" onClick={() => handleDelete(b._id)} className="!min-h-[36px] !px-2 hover:!text-[var(--admin-error)]">Delete</AdminButton>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-
-          <div className="lg:hidden divide-y divide-white/10">
-            {banners.map((b) => (
-              <div key={b._id} className="p-4">
-                <div className="flex gap-3">
-                  <div className="w-16 h-10 rounded overflow-hidden bg-[#222634] flex-shrink-0">
-                    {b.imageUrl ? <AdminImage src={b.imageUrl} alt="" width={60} height={40} className="w-full h-full object-cover" /> : null}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-[#f0f0f0] truncate">{b.title || '—'}</p>
-                    {b.subtitle && <p className="text-xs text-[#8b92a5] truncate">{b.subtitle}</p>}
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#222634] text-[#8b92a5]">{b.position || 'hero'}</span>
-                      <span className="text-xs text-[#8b92a5]">{b.startDate ? new Date(b.startDate).toLocaleDateString() : '—'} – {b.endDate ? new Date(b.endDate).toLocaleDateString() : '—'}</span>
-                    </div>
-                  </div>
-                  <button type="button" onClick={() => toggleActive(b)} className={cn('relative w-14 h-8 rounded-full transition-colors min-w-[56px] flex-shrink-0', b.isActive !== false ? 'bg-[#c9a84c]' : 'bg-[#222634]')}>
-                    <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform', b.isActive !== false ? 'left-7' : 'left-1')} />
-                  </button>
-                </div>
-                <div className="flex gap-2 mt-3 pt-3 border-t border-white/10">
-                  <button type="button" onClick={() => openEdit(b)} className="min-h-[40px] px-3 text-sm text-[#c9a84c] hover:bg-[#c9a84c]/20 rounded">Edit</button>
-                  <button type="button" onClick={() => api.delete(`/admin/banners/${b._id}`).then(() => { toast('Deleted'); fetchBanners(); }).catch(() => toast('Failed', 'error'))} className="min-h-[40px] px-3 text-sm text-[#ef4444] hover:bg-[#ef4444]/20 rounded">Delete</button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {banners.length === 0 && <div className="py-12 text-center text-[#8b92a5]">No banners</div>}
-        </div>
+          </AdminPanel>
+        </>
       )}
+
+      <AdminFab onClick={openAdd} label="Add Banner" />
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Banner' : 'Add Banner'} variant="dark">
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Title</label>
-            <input type="text" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
-          </div>
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Subtitle</label>
-            <input type="text" value={form.subtitle} onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
-          </div>
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Image *</label>
+          <AdminField label="Title">
+            <AdminInput type="text" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
+          </AdminField>
+          <AdminField label="Subtitle">
+            <AdminInput type="text" value={form.subtitle} onChange={(e) => setForm((f) => ({ ...f, subtitle: e.target.value }))} />
+          </AdminField>
+          <AdminField label="Image" required>
             <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" id="banner-img" />
-            <label htmlFor="banner-img" className="block min-h-[120px] border-2 border-dashed border-[rgba(255,255,255,0.08)] rounded-lg p-4 text-center cursor-pointer hover:border-[#c9a84c] text-[#8b92a5]">
-              {form.imageUrl ? <AdminImage src={form.imageUrl} alt="" width={300} height={120} className="mx-auto rounded max-h-32 object-cover" /> : uploading ? 'Uploading...' : 'Click to upload'}
+            <label htmlFor="banner-img" className="block min-h-[120px] border-2 border-dashed border-[var(--admin-border)] rounded-lg p-4 text-center cursor-pointer hover:border-[var(--admin-accent)] text-[var(--admin-text-muted)]">
+              {form.imageUrl ? <Image src={form.imageUrl} alt="" width={300} height={120} className="mx-auto rounded max-h-32 object-cover" /> : uploading ? 'Uploading...' : 'Click to upload'}
             </label>
-          </div>
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">CTA Text</label>
-            <input type="text" value={form.ctaText} onChange={(e) => setForm((f) => ({ ...f, ctaText: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
-          </div>
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">CTA Link</label>
-            <input type="text" value={form.ctaLink} onChange={(e) => setForm((f) => ({ ...f, ctaLink: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
-          </div>
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Position</label>
-            <select value={form.position} onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]">
+          </AdminField>
+          <AdminField label="CTA Text">
+            <AdminInput type="text" value={form.ctaText} onChange={(e) => setForm((f) => ({ ...f, ctaText: e.target.value }))} />
+          </AdminField>
+          <AdminField label="CTA Link">
+            <AdminInput type="text" value={form.ctaLink} onChange={(e) => setForm((f) => ({ ...f, ctaLink: e.target.value }))} />
+          </AdminField>
+          <AdminField label="Position">
+            <AdminSelect value={form.position} onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))}>
               {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-            </select>
-          </div>
+            </AdminSelect>
+          </AdminField>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Start Date</label>
-              <input type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
-            </div>
-            <div>
-              <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">End Date</label>
-              <input type="date" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
-            </div>
+            <AdminField label="Start Date">
+              <AdminInput type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} />
+            </AdminField>
+            <AdminField label="End Date">
+              <AdminInput type="date" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} />
+            </AdminField>
           </div>
-          <div className="flex items-center gap-3">
-            <button type="button" role="switch" aria-checked={form.isActive} onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))} className={cn('relative w-14 h-8 rounded-full transition-colors', form.isActive ? 'bg-[#c9a84c]' : 'bg-[#222634]')}>
-              <span className={cn('absolute top-1 w-6 h-6 rounded-full bg-white transition-transform', form.isActive ? 'left-7' : 'left-1')} />
-            </button>
-            <span className="text-sm text-[#f0f0f0]">Active</span>
-          </div>
-          <div className="flex gap-3 pt-2 border-t border-[rgba(255,255,255,0.08)]">
-            <button type="button" onClick={handleSave} disabled={saving} className="min-h-[44px] px-4 py-2 bg-[#c9a84c] text-[#0f1117] font-medium rounded-lg disabled:opacity-50">Save</button>
-            <button type="button" onClick={() => setModalOpen(false)} className="min-h-[44px] px-4 py-2 border border-[rgba(255,255,255,0.08)] rounded-lg text-[#8b92a5] hover:text-[#f0f0f0]">Cancel</button>
-          </div>
+          <AdminToggle checked={form.isActive} onChange={(v) => setForm((f) => ({ ...f, isActive: v }))} label="Active" />
+          <AdminModalActions>
+            <AdminButton onClick={handleSave} disabled={saving}>Save</AdminButton>
+            <AdminButton variant="secondary" onClick={() => setModalOpen(false)}>Cancel</AdminButton>
+          </AdminModalActions>
         </div>
       </Modal>
     </div>

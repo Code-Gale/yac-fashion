@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { AdminImage } from '@/components/admin/AdminImage';
+import Image from 'next/image';
 import { api } from '@/lib/api';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/ToastContext';
+import {
+  AdminPageHeader, AdminButton, AdminCard, AdminField, AdminInput, AdminTextarea,
+  AdminBadge, AdminFab, AdminModalActions,
+} from '@/components/admin/ui';
 
 export default function AdminCategoriesPage() {
   const { toast } = useToast();
@@ -98,67 +101,65 @@ export default function AdminCategoriesPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl text-[#f0f0f0] mb-6">Categories</h1>
+      <AdminPageHeader
+        title="Categories"
+        action={<AdminButton onClick={openAdd} className="hidden lg:inline-flex">Add Category</AdminButton>}
+      />
 
       {loading ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-[#1a1d26] border border-white/10 rounded-xl aspect-[3/2] animate-pulse" />
+            <div key={i} className="admin-skeleton aspect-[3/2] rounded-2xl" style={{ animationDelay: `${i * 80}ms` }} />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((c) => (
-            <div key={c._id} className="bg-[#1a1d26] border border-white/10 rounded-xl overflow-hidden">
-              <div className="aspect-[3/2] relative bg-[#222634]">
+            <AdminCard key={c._id} padding={false} className="overflow-hidden">
+              <div className="aspect-[3/2] relative bg-[var(--admin-surface-3)]">
                 {c.image ? (
-                  <AdminImage src={c.image} alt="" fill className="object-cover" />
+                  <Image src={c.image} alt="" fill className="object-cover" />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-[#8b92a5]">
+                  <div className="absolute inset-0 flex items-center justify-center text-[var(--admin-text-muted)]">
                     <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   </div>
                 )}
               </div>
               <div className="p-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-[#f0f0f0]">{c.name}</h3>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#222634] text-[#8b92a5]">{c.productCount ?? 0} products</span>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-medium truncate">{c.name}</h3>
+                  <AdminBadge tone="muted">{c.productCount ?? 0} products</AdminBadge>
                 </div>
                 <div className="flex gap-2 mt-3">
-                  <button type="button" onClick={() => openEdit(c)} className="min-h-[44px] px-3 py-2 text-sm text-[#c9a84c] hover:bg-[#c9a84c]/20 rounded">Edit</button>
-                  <button type="button" onClick={() => handleDelete(c._id)} className="min-h-[44px] px-3 py-2 text-sm text-[#ef4444] hover:bg-[#ef4444]/20 rounded">Delete</button>
+                  <AdminButton variant="ghost" onClick={() => openEdit(c)}>Edit</AdminButton>
+                  <AdminButton variant="danger" onClick={() => handleDelete(c._id)}>Delete</AdminButton>
                 </div>
               </div>
-            </div>
+            </AdminCard>
           ))}
-          <button type="button" onClick={openAdd} className="min-h-[120px] aspect-[3/2] border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-[#c9a84c] hover:bg-[#c9a84c]/5 transition-colors">
-            <svg className="w-12 h-12 text-[#8b92a5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            <span className="text-sm text-[#8b92a5]">Add Category</span>
-          </button>
         </div>
       )}
 
+      <AdminFab onClick={openAdd} label="Add Category" />
+
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Category' : 'Add Category'} variant="dark">
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Name *</label>
-            <input type="text" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
-          </div>
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Description</label>
-            <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} className="w-full min-h-[44px] px-4 py-2 bg-[#222634] border border-[rgba(255,255,255,0.12)] rounded-lg text-[#f0f0f0] placeholder-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
-          </div>
-          <div>
-            <label className="block text-xs text-[#8b92a5] uppercase tracking-wider mb-1">Image</label>
+          <AdminField label="Name" required>
+            <AdminInput type="text" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
+          </AdminField>
+          <AdminField label="Description">
+            <AdminTextarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} />
+          </AdminField>
+          <AdminField label="Image">
             <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" id="cat-img" />
-            <label htmlFor="cat-img" className="block min-h-[100px] border-2 border-dashed border-[rgba(255,255,255,0.08)] rounded-lg p-4 text-center cursor-pointer hover:border-[#c9a84c] text-[#8b92a5]">
-              {form.image ? <AdminImage src={form.image} alt="" width={200} height={100} className="mx-auto rounded" /> : uploading ? 'Uploading...' : 'Click to upload'}
+            <label htmlFor="cat-img" className="block min-h-[100px] border-2 border-dashed border-[var(--admin-border)] rounded-lg p-4 text-center cursor-pointer hover:border-[var(--admin-accent)] text-[var(--admin-text-muted)]">
+              {form.image ? <Image src={form.image} alt="" width={200} height={100} className="mx-auto rounded" /> : uploading ? 'Uploading...' : 'Click to upload'}
             </label>
-          </div>
-          <div className="flex gap-3 pt-2 border-t border-[rgba(255,255,255,0.08)]">
-            <button type="button" onClick={handleSave} disabled={saving} className="min-h-[44px] px-4 py-2 bg-[#c9a84c] text-[#0f1117] font-medium rounded-lg disabled:opacity-50">Save</button>
-            <button type="button" onClick={() => setModalOpen(false)} className="min-h-[44px] px-4 py-2 border border-[rgba(255,255,255,0.08)] rounded-lg text-[#8b92a5] hover:text-[#f0f0f0]">Cancel</button>
-          </div>
+          </AdminField>
+          <AdminModalActions>
+            <AdminButton onClick={handleSave} disabled={saving}>Save</AdminButton>
+            <AdminButton variant="secondary" onClick={() => setModalOpen(false)}>Cancel</AdminButton>
+          </AdminModalActions>
         </div>
       </Modal>
     </div>

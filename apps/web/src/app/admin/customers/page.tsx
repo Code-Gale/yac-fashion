@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { AdminTable } from '@/components/admin/AdminTable';
-import { cn } from '@/lib/utils';
+import { AdminTable, AdminMobileCard } from '@/components/admin/AdminTable';
+import {
+  AdminPageHeader, AdminInput, AdminPanel, AdminPagination, AdminBadge,
+} from '@/components/admin/ui';
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -16,15 +17,12 @@ export default function AdminCustomersPage() {
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams();
-    params.set('page', String(page));
-    params.set('limit', '20');
+    const params = new URLSearchParams({ page: String(page), limit: '20' });
     if (search) params.set('search', search);
     try {
       const { data } = await api.get(`/admin/customers?${params}`);
       const payload = data?.data ?? data;
       setCustomers(payload?.customers ?? []);
-      setTotal(payload?.total ?? 0);
       setTotalPages(payload?.totalPages ?? 0);
     } catch (_) {
       setCustomers([]);
@@ -33,60 +31,51 @@ export default function AdminCustomersPage() {
     }
   }, [page, search]);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   const initials = (name: string) => name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() || '?';
 
   return (
     <div>
-      <h1 className="font-display text-2xl text-[#f0f0f0] mb-6">Customers</h1>
+      <AdminPageHeader title="Customers" />
 
-      <div className="mb-6">
-        <input type="search" placeholder="Search by name or email..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="w-full lg:w-80 min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0] placeholder:text-[#8b92a5] focus:outline-none focus:ring-2 focus:ring-[#c9a84c]" />
+      <div className="mb-4">
+        <AdminInput type="search" placeholder="Search by name or email..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
       </div>
 
-      <div className="bg-[#1a1d26] border border-white/10 rounded-xl overflow-hidden">
+      <AdminPanel>
         <AdminTable
           columns={[
             { key: 'avatar', label: '', width: '50px', render: (r) => (
-              <div className="w-10 h-10 rounded-full bg-[#c9a84c] text-[#0f1117] flex items-center justify-center font-semibold text-sm">{initials(r.name)}</div>
+              <div className="w-10 h-10 rounded-full bg-[var(--admin-accent)] text-[var(--admin-accent-text)] flex items-center justify-center font-bold text-sm">{initials(r.name)}</div>
             )},
-            { key: 'name', label: 'Name', render: (r) => <Link href={`/admin/customers/${r._id}`} className="font-medium text-[#f0f0f0] hover:text-[#c9a84c]">{r.name}</Link> },
-            { key: 'email', label: 'Email', hideOnMobile: true, render: (r) => <span className="text-[#8b92a5]">{r.email}</span> },
-            { key: 'registered', label: 'Registered', hideOnMobile: true, render: (r) => <span className="text-sm text-[#8b92a5]">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</span> },
-            { key: 'orders', label: 'Orders', hideOnMobile: true, render: (r) => <span className="text-[#8b92a5]">{r.orderCount ?? '-'}</span> },
-            { key: 'spent', label: 'Total Spent', render: (r) => <span className="font-display text-[#c9a84c]">{typeof r.totalSpent === 'number' ? `₦${r.totalSpent.toLocaleString()}` : '₦0'}</span> },
-            { key: 'status', label: 'Status', hideOnMobile: true, render: (r) => <span className={cn('text-xs px-2 py-0.5 rounded-full', r.isActive !== false ? 'bg-[#22c55e]/20 text-[#22c55e]' : 'bg-[#ef4444]/20 text-[#ef4444]')}>{r.isActive !== false ? 'Active' : 'Inactive'}</span> },
-            { key: 'action', label: '', width: '80px', render: (r) => <Link href={`/admin/customers/${r._id}`} className="text-[#c9a84c] hover:underline text-sm">View</Link> },
+            { key: 'name', label: 'Name', render: (r) => <Link href={`/admin/customers/${r._id}`} className="font-semibold hover:text-[var(--admin-accent)]">{r.name}</Link> },
+            { key: 'email', label: 'Email', hideOnMobile: true, render: (r) => <span className="text-[var(--admin-text-muted)]">{r.email}</span> },
+            { key: 'spent', label: 'Total Spent', render: (r) => <span className="font-display text-[var(--admin-accent)]">{typeof r.totalSpent === 'number' ? `₦${r.totalSpent.toLocaleString()}` : '₦0'}</span> },
+            { key: 'status', label: 'Status', hideOnMobile: true, render: (r) => (
+              <AdminBadge tone={r.isActive !== false ? 'success' : 'error'}>{r.isActive !== false ? 'Active' : 'Inactive'}</AdminBadge>
+            )},
+            { key: 'action', label: '', width: '80px', render: (r) => <Link href={`/admin/customers/${r._id}`} className="text-[var(--admin-accent)] text-sm font-semibold">View</Link> },
           ]}
           data={customers}
           loading={loading}
           emptyMessage="No customers found"
-          onRowClick={(r) => window.location.href = `/admin/customers/${r._id}`}
-          mobileCardRender={(r) => (
-            <Link href={`/admin/customers/${r._id}`} className="block bg-[#222634] rounded-lg p-4 border border-white/10">
+          mobileCardRender={(r, i) => (
+            <AdminMobileCard href={`/admin/customers/${r._id}`} index={i}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#c9a84c] text-[#0f1117] flex items-center justify-center font-semibold text-sm">{initials(r.name)}</div>
+                <div className="w-11 h-11 rounded-full bg-[var(--admin-accent)] text-[var(--admin-accent-text)] flex items-center justify-center font-bold text-sm shrink-0">{initials(r.name)}</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-[#f0f0f0]">{r.name}</p>
-                  <p className="text-sm text-[#8b92a5] truncate">{r.email}</p>
+                  <p className="font-semibold">{r.name}</p>
+                  <p className="text-sm text-[var(--admin-text-muted)] truncate">{r.email}</p>
                 </div>
-                <span className="font-display text-[#c9a84c]">{typeof r.totalSpent === 'number' ? `₦${r.totalSpent.toLocaleString()}` : '₦0'}</span>
+                <span className="font-display text-[var(--admin-accent)] text-sm">{typeof r.totalSpent === 'number' ? `₦${r.totalSpent.toLocaleString()}` : '₦0'}</span>
               </div>
-            </Link>
+            </AdminMobileCard>
           )}
         />
-      </div>
+      </AdminPanel>
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex justify-center gap-2">
-          <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="min-h-[44px] px-4 py-2 border border-white/10 rounded-lg disabled:opacity-50">Previous</button>
-          <span className="min-h-[44px] flex items-center px-4 text-[#8b92a5]">Page {page} of {totalPages}</span>
-          <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="min-h-[44px] px-4 py-2 border border-white/10 rounded-lg disabled:opacity-50">Next</button>
-        </div>
-      )}
+      <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '2340000000000';
+import { WHATSAPP_NUMBER } from '@/lib/social';
+
 const WHATSAPP_TEXT = 'Hi%2C+I+have+a+question+about+an+order';
 
 export function WhatsAppButton() {
@@ -14,7 +15,7 @@ export function WhatsAppButton() {
 
   return (
     <Link
-      href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_TEXT}`}
+      href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || WHATSAPP_NUMBER}?text=${WHATSAPP_TEXT}`}
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-20 right-4 lg:bottom-8 lg:right-8 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"

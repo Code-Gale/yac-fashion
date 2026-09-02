@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
+import { SOCIAL_LINKS } from '@/lib/social';
 
 const SHOP_LINKS = [
   { href: '/products?new=true', label: 'New Arrivals' },
@@ -19,13 +20,6 @@ const HELP_LINKS = [
   { href: '/faqs', label: 'FAQs' },
   { href: '/returns', label: 'Returns Policy' },
   { href: '/contact', label: 'Contact Us' },
-];
-
-const SOCIAL_LINKS = [
-  { href: 'https://instagram.com', label: 'Instagram', icon: 'instagram' },
-  { href: 'https://tiktok.com', label: 'TikTok', icon: 'tiktok' },
-  { href: 'https://facebook.com', label: 'Facebook', icon: 'facebook' },
-  { href: 'https://wa.me/234', label: 'WhatsApp', icon: 'whatsapp' },
 ];
 
 function SocialIcon({ icon }: { icon: string }) {

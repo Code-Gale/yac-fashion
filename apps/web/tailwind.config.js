@@ -45,6 +45,9 @@ module.exports = {
         'fade-up': 'fadeUp 0.4s ease-out forwards',
         shimmer: 'shimmer 1.5s infinite',
         'slide-in': 'slideIn 0.3s ease-out forwards',
+        'slide-in-left': 'slideInLeft 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards',
+        'admin-page': 'adminPageIn 0.35s ease-out forwards',
+        'admin-card': 'adminCardIn 0.35s ease-out forwards',
         marquee: 'marquee 20s linear infinite',
         shake: 'shake 0.5s ease-in-out',
       },
@@ -60,6 +63,18 @@ module.exports = {
         slideIn: {
           '0%': { opacity: '0', transform: 'translateY(16px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideInLeft: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        adminPageIn: {
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        adminCardIn: {
+          '0%': { opacity: '0', transform: 'translateY(8px) scale(0.98)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
         marquee: {
           '0%': { transform: 'translateX(0)' },

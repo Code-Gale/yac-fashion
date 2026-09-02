@@ -13,6 +13,7 @@ import { BrandStoryBlock } from '@/components/home/BrandStoryBlock';
 import { TestimonialsBlock } from '@/components/home/TestimonialsBlock';
 import { NewsletterBlock } from '@/components/home/NewsletterBlock';
 import { fetchApi } from '@/lib/api-client';
+import { getSocialUrlsForSchema } from '@/lib/social';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.CLIENT_URL || 'http://localhost:3000';
 
@@ -31,11 +32,7 @@ export default async function HomePage() {
     name: 'YAC Fashion House',
     url: BASE_URL,
     logo: `${BASE_URL}/og-default.jpg`,
-    sameAs: [
-      process.env.NEXT_PUBLIC_INSTAGRAM_URL,
-      process.env.NEXT_PUBLIC_FACEBOOK_URL,
-      process.env.NEXT_PUBLIC_TIKTOK_URL,
-    ].filter(Boolean),
+    sameAs: getSocialUrlsForSchema(),
   };
 
   return (

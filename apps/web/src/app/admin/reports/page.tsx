@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { api } from '@/lib/api';
 import { AdminTable } from '@/components/admin/AdminTable';
-import { cn } from '@/lib/utils';
+import {
+  AdminPageHeader, AdminButton, AdminInput, AdminCard, AdminStatCard,
+  AdminFilterTabs, AdminLoading, AdminPanel,
+} from '@/components/admin/ui';
 
 const PRESETS = [
   { label: 'Today', from: () => new Date().toISOString().slice(0, 10), to: () => new Date().toISOString().slice(0, 10) },
@@ -25,6 +27,7 @@ export default function AdminReportsPage() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [groupBy, setGroupBy] = useState('day');
+  const [activePreset, setActivePreset] = useState('Last 7 days');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,6 +60,7 @@ export default function AdminReportsPage() {
   }, [fetchReport]);
 
   const applyPreset = (preset: typeof PRESETS[0]) => {
+    setActivePreset(preset.label);
     setFromDate(preset.from());
     setToDate(preset.to());
   };
@@ -89,49 +93,40 @@ export default function AdminReportsPage() {
 
   return (
     <div>
-      <h1 className="font-display text-2xl text-[#f0f0f0] mb-6">Reports</h1>
+      <AdminPageHeader
+        title="Reports"
+        action={<AdminButton variant="secondary" onClick={exportCsv} disabled={!data} className="hidden sm:inline-flex">Export CSV</AdminButton>}
+      />
 
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 lg:mx-0 lg:px-0 lg:flex-wrap">
-          {PRESETS.map((p) => (
-            <button key={p.label} type="button" onClick={() => applyPreset(p)} className={cn('min-h-[44px] px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0', p.label === 'Custom' ? 'bg-[#1a1d26] border border-white/10 text-[#8b92a5]' : 'bg-[#1a1d26] border border-white/10 text-[#8b92a5] hover:text-[#f0f0f0]')}>{p.label}</button>
-          ))}
+      <div className="space-y-4 mb-6">
+        <AdminFilterTabs
+          tabs={PRESETS.map((p) => ({ value: p.label, label: p.label }))}
+          value={activePreset}
+          onChange={(v) => {
+            const preset = PRESETS.find((p) => p.label === v);
+            if (preset) applyPreset(preset);
+          }}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <AdminInput type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setActivePreset('Custom'); }} />
+          <AdminInput type="date" value={toDate} onChange={(e) => { setToDate(e.target.value); setActivePreset('Custom'); }} />
         </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0] flex-1 min-w-[140px]" />
-          <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0] flex-1 min-w-[140px]" />
-          <div className="flex gap-2 w-full sm:w-auto">
-            {GROUP_BY.map((g) => (
-              <button key={g.value} type="button" onClick={() => setGroupBy(g.value)} className={cn('min-h-[44px] px-4 py-2 rounded-full text-sm font-medium flex-1 sm:flex-initial', groupBy === g.value ? 'bg-[#c9a84c] text-[#0f1117]' : 'bg-[#1a1d26] border border-white/10 text-[#8b92a5]')}>{g.label}</button>
-            ))}
-          </div>
-          <button type="button" onClick={exportCsv} disabled={!data} className="min-h-[44px] px-4 py-2 bg-[#1a1d26] border border-white/10 rounded-lg text-[#f0f0f0] hover:bg-white/5 w-full sm:w-auto sm:ml-auto">Export CSV</button>
-        </div>
+        <AdminFilterTabs tabs={GROUP_BY} value={groupBy} onChange={setGroupBy} />
+        <AdminButton variant="secondary" onClick={exportCsv} disabled={!data} className="sm:hidden w-full">Export CSV</AdminButton>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center min-h-[300px]">
-          <div className="animate-spin w-10 h-10 border-2 border-[#c9a84c] border-t-transparent rounded-full" />
-        </div>
+        <AdminLoading />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <div className="bg-[#1a1d26] border border-white/10 rounded-xl p-5">
-              <p className="text-xs text-[#8b92a5] uppercase tracking-wider">Total Revenue</p>
-              <p className="font-display text-2xl text-[#f0f0f0] mt-1">₦{(data?.totalRevenue ?? 0).toLocaleString()}</p>
-            </div>
-            <div className="bg-[#1a1d26] border border-white/10 rounded-xl p-5">
-              <p className="text-xs text-[#8b92a5] uppercase tracking-wider">Orders</p>
-              <p className="font-display text-2xl text-[#f0f0f0] mt-1">{data?.totalOrders ?? 0}</p>
-            </div>
-            <div className="bg-[#1a1d26] border border-white/10 rounded-xl p-5">
-              <p className="text-xs text-[#8b92a5] uppercase tracking-wider">Avg Order Value</p>
-              <p className="font-display text-2xl text-[#f0f0f0] mt-1">₦{aov.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-            </div>
+            <AdminStatCard label="Total Revenue" value={`₦${(data?.totalRevenue ?? 0).toLocaleString()}`} tone="accent" />
+            <AdminStatCard label="Orders" value={data?.totalOrders ?? 0} tone="info" />
+            <AdminStatCard label="Avg Order Value" value={`₦${aov.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} tone="success" />
           </div>
 
-          <div className="bg-[#1a1d26] border border-white/10 rounded-xl p-5 mb-8 min-h-[250px]">
-            <h2 className="text-sm font-medium text-[#f0f0f0] mb-4">Revenue</h2>
+          <AdminCard className="mb-8 min-h-[250px]">
+            <h2 className="text-sm font-medium mb-4">Revenue</h2>
             <div className="h-[200px] lg:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
@@ -143,37 +138,23 @@ export default function AdminReportsPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </AdminCard>
 
-          <div className="bg-[#1a1d26] border border-white/10 rounded-xl p-5">
-            <h2 className="text-sm font-medium text-[#f0f0f0] mb-4">Top Products</h2>
+          <AdminPanel>
+            <h2 className="text-sm font-medium px-4 pt-4 pb-2">Top Products</h2>
             <AdminTable
               columns={[
-                { key: 'rank', label: '#', width: '50px', render: (_: any, i?: number) => <span className="text-[#8b92a5]">{(i ?? 0) + 1}</span> },
+                { key: 'rank', label: '#', width: '50px', render: (_: any, i?: number) => <span className="text-[var(--admin-text-muted)]">{(i ?? 0) + 1}</span> },
                 { key: 'product', label: 'Product', render: (r: any) => (
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium text-[#f0f0f0]">{r.name}</span>
-                  </div>
+                  <span className="font-semibold">{r.name}</span>
                 )},
-                { key: 'units', label: 'Units Sold', render: (r: any) => <span className="text-[#8b92a5]">{r.unitsSold ?? 0}</span> },
-                { key: 'revenue', label: 'Revenue', render: (r: any) => <span className="font-display text-[#c9a84c]">{typeof r.revenue === 'number' ? `₦${r.revenue.toLocaleString()}` : '—'}</span> },
+                { key: 'units', label: 'Units Sold', render: (r: any) => <span className="text-[var(--admin-text-muted)]">{r.unitsSold ?? 0}</span> },
+                { key: 'revenue', label: 'Revenue', render: (r: any) => <span className="font-display text-[var(--admin-accent)]">{typeof r.revenue === 'number' ? `₦${r.revenue.toLocaleString()}` : '—'}</span> },
               ]}
               data={(data?.topProducts ?? []) as any[]}
               emptyMessage="No data"
-              mobileCardRender={(r: any, i?: number) => (
-                <div className="bg-[#222634] rounded-lg p-4 border border-white/10 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-[#8b92a5] text-sm flex-shrink-0">#{(i ?? 0) + 1}</span>
-                    <div className="min-w-0">
-                      <p className="font-medium text-[#f0f0f0] truncate">{r.name}</p>
-                      <p className="text-xs text-[#8b92a5]">{r.unitsSold ?? 0} units sold</p>
-                    </div>
-                  </div>
-                  <span className="font-display text-[#c9a84c] flex-shrink-0">{typeof r.revenue === 'number' ? `₦${r.revenue.toLocaleString()}` : '—'}</span>
-                </div>
-              )}
             />
-          </div>
+          </AdminPanel>
         </>
       )}
     </div>
